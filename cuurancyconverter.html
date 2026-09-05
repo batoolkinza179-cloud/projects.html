@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currency Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #1C1F26;
+    --field: #20232B;
+    --amber: #E8A94B;
+    --teal: #5FBFA6;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+    --rule: #2A2E37;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .card{
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 32px 28px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: 26px;
+    margin-bottom: 26px;
+  }
+
+  .row{
+    display:flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .amount-input{
+    flex:1;
+    background: var(--field);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family:'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 600;
+    outline: none;
+  }
+  .amount-input:focus{ border-color: var(--amber); }
+  select{
+    background: var(--field);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    color: var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 0 12px;
+    width: 110px;
+    cursor:pointer;
+    outline: none;
+  }
+  select:focus{ border-color: var(--amber); }
+
+  .swap-row{
+    display:flex; justify-content:center;
+    margin: 4px 0 16px;
+  }
+  .swap-btn{
+    background: var(--field);
+    border: 1px solid var(--rule);
+    color: var(--amber);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    cursor:pointer;
+    font-size: 16px;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform 0.2s ease, border-color 0.15s ease;
+  }
+  .swap-btn:hover{ border-color: var(--amber); }
+  .swap-btn.spin{ transform: rotate(180deg); }
+
+  .result-box{
+    background: var(--field);
+    border-radius: 14px;
+    padding: 20px;
+    text-align:center;
+    margin-bottom: 16px;
+    min-height: 92px;
+    display:flex; flex-direction:column; justify-content:center;
+  }
+  .result-value{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: 30px;
+    color: var(--teal);
+    word-break: break-word;
+  }
+  .rate-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 8px;
+  }
+
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--dim);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <p class="eyebrow">Live exchange rates</p>
+  <h1>Currency Converter</h1>
+
+  <div class="row">
+    <input type="number" id="amountInput" class="amount-input" value="1" min="0" step="any">
+    <select id="fromSelect"></select>
+  </div>
+
+  <div class="swap-row">
+    <button class="swap-btn" id="swapBtn" title="Swap currencies">⇅</button>
+  </div>
+
+  <div class="row">
+    <div class="amount-input" style="display:flex;align-items:center;" id="resultInline">0.00</div>
+    <select id="toSelect"></select>
+  </div>
+
+  <div class="result-box">
+    <div class="rate-line" id="rateLine">Loading rates…</div>
+  </div>
+
+  <p class="status-line" id="statusLine"></p>
+</div>
+
+<script>
+(function(){
+  const currencies = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','CNY','INR','PKR','AED','SAR','SGD','NZD','ZAR','BRL','MXN','SEK','NOK','TRY'];
+
+  const amountInput = document.getElementById('amountInput');
+  const fromSelect = document.getElementById('fromSelect');
+  const toSelect = document.getElementById('toSelect');
+  const resultInline = document.getElementById('resultInline');
+  const rateLine = document.getElementById('rateLine');
+  const statusLine = document.getElementById('statusLine');
+  const swapBtn = document.getElementById('swapBtn');
+
+  currencies.forEach(c => {
+    const o1 = document.createElement('option'); o1.value = c; o1.textContent = c;
+    const o2 = document.createElement('option'); o2.value = c; o2.textContent = c;
+    fromSelect.appendChild(o1);
+    toSelect.appendChild(o2);
+  });
+  fromSelect.value = 'USD';
+  toSelect.value = 'EUR';
+
+  let rateCache = {}; // { "USD_EUR": rate }
+  let debounceId = null;
+
+  async function getRate(from, to){
+    const key = from + '_' + to;
+    if (rateCache[key] !== undefined) return rateCache[key];
+
+    const url = 'https://api.frankfurter.app/latest?from=' + from + '&to=' + to;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Rate fetch failed');
+    const data = await res.json();
+    const rate = data.rates[to];
+    rateCache[key] = rate;
+    return rate;
+  }
+
+  async function convert(){
+    const amount = parseFloat(amountInput.value) || 0;
+    const from = fromSelect.value;
+    const to = toSelect.value;
+
+    if (from === to){
+      resultInline.textContent = amount.toFixed(2);
+      rateLine.textContent = '1 ' + from + ' = 1 ' + to;
+      statusLine.textContent = '';
+      return;
+    }
+
+    statusLine.textContent = 'Fetching rate…';
+    try{
+      const rate = await getRate(from, to);
+      const converted = amount * rate;
+      resultInline.textContent = converted.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+      rateLine.textContent = '1 ' + from + ' = ' + rate.toFixed(4) + ' ' + to;
+      statusLine.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    } catch(err){
+      statusLine.textContent = 'Could not fetch live rates — check connection.';
+      rateLine.textContent = '—';
+    }
+  }
+
+  function debouncedConvert(){
+    clearTimeout(debounceId);
+    debounceId = setTimeout(convert, 300);
+  }
+
+  amountInput.addEventListener('input', debouncedConvert);
+  fromSelect.addEventListener('change', convert);
+  toSelect.addEventListener('change', convert);
+
+  swapBtn.addEventListener('click', () => {
+    swapBtn.classList.add('spin');
+    setTimeout(() => swapBtn.classList.remove('spin'), 200);
+    const f = fromSelect.value;
+    fromSelect.value = toSelect.value;
+    toSelect.value = f;
+    convert();
+  });
+
+  convert();
+})();
+</script>
+</body>
+</html>

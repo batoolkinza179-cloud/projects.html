@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countdown Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #1C1F26;
+    --amber: #E8A94B;
+    --teal: #5FBFA6;
+    --coral: #E1605A;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+    --rule: #2A2E37;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .app{ width:100%; max-width: 460px; text-align:center; }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+  .event-name{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(26px, 6vw, 34px);
+    margin-bottom: 30px;
+    word-break: break-word;
+  }
+
+  .units{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  .unit{
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 18px 6px;
+  }
+  .unit-value{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(26px, 6vw, 36px);
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+  }
+  .unit-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--teal);
+    margin-bottom: 26px;
+    min-height: 18px;
+  }
+
+  .setup{
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 22px;
+    text-align:left;
+  }
+  .setup.hidden{ display:none; }
+  .field{ margin-bottom: 14px; }
+  .field label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .field input{
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    color: var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 15px;
+    padding: 12px 14px;
+    outline: none;
+  }
+  .field input:focus{ border-color: var(--amber); }
+
+  .presets{
+    display:flex; gap: 8px; flex-wrap:wrap;
+    margin-bottom: 16px;
+  }
+  .preset-btn{
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: 100px;
+    cursor:pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .preset-btn:hover{ border-color: var(--amber); color: var(--amber); }
+
+  .btn-row{ display:flex; gap: 10px; }
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 13px 0;
+    border-radius: 10px;
+    border:none;
+    cursor:pointer;
+    flex:1;
+    transition: filter 0.15s ease;
+  }
+  .btn-primary{ background: var(--amber); color: #14161A; font-weight:600; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-secondary{ background: var(--bg); color: var(--text); border: 1px solid var(--rule); }
+  .btn-secondary:hover{ border-color: var(--dim); }
+
+  .edit-btn{
+    background:none;
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 100px;
+    cursor:pointer;
+    margin-top: 6px;
+  }
+  .edit-btn:hover{ border-color: var(--amber); color: var(--amber); }
+  .edit-btn.hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <p class="eyebrow">Counting down to</p>
+  <h1 class="event-name" id="eventName">—</h1>
+
+  <div class="units" id="unitsWrap" style="display:none;">
+    <div class="unit"><div class="unit-value" id="uDays">00</div><div class="unit-label">Days</div></div>
+    <div class="unit"><div class="unit-value" id="uHours">00</div><div class="unit-label">Hours</div></div>
+    <div class="unit"><div class="unit-value" id="uMins">00</div><div class="unit-label">Mins</div></div>
+    <div class="unit"><div class="unit-value" id="uSecs">00</div><div class="unit-label">Secs</div></div>
+  </div>
+
+  <p class="status-line" id="statusLine"></p>
+
+  <button class="edit-btn hidden" id="editBtn">Change event</button>
+
+  <div class="setup" id="setup">
+    <div class="field">
+      <label>Event name</label>
+      <input type="text" id="nameInput" placeholder="e.g. New Year, Exam, Launch Day">
+    </div>
+    <div class="field">
+      <label>Target date &amp; time</label>
+      <input type="datetime-local" id="dateInput">
+    </div>
+    <div class="presets">
+      <button class="preset-btn" data-preset="newyear">New Year</button>
+      <button class="preset-btn" data-preset="1h">+1 hour</button>
+      <button class="preset-btn" data-preset="24h">+24 hours</button>
+      <button class="preset-btn" data-preset="7d">+7 days</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="startBtn">Start countdown</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const eventName = document.getElementById('eventName');
+  const unitsWrap = document.getElementById('unitsWrap');
+  const statusLine = document.getElementById('statusLine');
+  const setup = document.getElementById('setup');
+  const editBtn = document.getElementById('editBtn');
+  const nameInput = document.getElementById('nameInput');
+  const dateInput = document.getElementById('dateInput');
+  const startBtn = document.getElementById('startBtn');
+
+  const uDays = document.getElementById('uDays');
+  const uHours = document.getElementById('uHours');
+  const uMins = document.getElementById('uMins');
+  const uSecs = document.getElementById('uSecs');
+
+  let target = null;
+  let intervalId = null;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  function toLocalInputValue(date){
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0,16);
+  }
+
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.preset;
+      const now = new Date();
+      let d;
+      if (p === 'newyear'){
+        d = new Date(now.getFullYear() + 1, 0, 1, 0, 0, 0);
+        nameInput.value = "New Year " + (now.getFullYear() + 1);
+      } else if (p === '1h'){
+        d = new Date(now.getTime() + 60*60*1000);
+        nameInput.value = nameInput.value || "1 Hour Countdown";
+      } else if (p === '24h'){
+        d = new Date(now.getTime() + 24*60*60*1000);
+        nameInput.value = nameInput.value || "24 Hour Countdown";
+      } else if (p === '7d'){
+        d = new Date(now.getTime() + 7*24*60*60*1000);
+        nameInput.value = nameInput.value || "7 Day Countdown";
+      }
+      dateInput.value = toLocalInputValue(d);
+    });
+  });
+
+  function tick(){
+    const now = Date.now();
+    const diff = target - now;
+    if (diff <= 0){
+      uDays.textContent = '00'; uHours.textContent='00'; uMins.textContent='00'; uSecs.textContent='00';
+      statusLine.textContent = "🎉 It's here!";
+      clearInterval(intervalId);
+      return;
+    }
+    const totalSec = Math.floor(diff/1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+
+    uDays.textContent = pad(days);
+    uHours.textContent = pad(hours);
+    uMins.textContent = pad(mins);
+    uSecs.textContent = pad(secs);
+    statusLine.textContent = '';
+  }
+
+  function startCountdown(){
+    const name = nameInput.value.trim() || 'Your Event';
+    const dateVal = dateInput.value;
+    if (!dateVal){
+      statusLine.textContent = 'Pick a target date first.';
+      statusLine.style.color = 'var(--coral)';
+      return;
+    }
+    target = new Date(dateVal).getTime();
+    if (isNaN(target)){
+      statusLine.textContent = 'Invalid date.';
+      return;
+    }
+
+    eventName.textContent = name;
+    unitsWrap.style.display = 'grid';
+    setup.classList.add('hidden');
+    editBtn.classList.remove('hidden');
+    statusLine.style.color = 'var(--teal)';
+
+    clearInterval(intervalId);
+    tick();
+    intervalId = setInterval(tick, 1000);
+  }
+
+  startBtn.addEventListener('click', startCountdown);
+  editBtn.addEventListener('click', () => {
+    clearInterval(intervalId);
+    setup.classList.remove('hidden');
+    editBtn.classList.add('hidden');
+    unitsWrap.style.display = 'none';
+    statusLine.textContent = '';
+    eventName.textContent = '—';
+  });
+
+  // default: prefill with New Year of the coming year
+  const now = new Date();
+  const ny = new Date(now.getFullYear() + 1, 0, 1, 0, 0, 0);
+  nameInput.value = "New Year " + (now.getFullYear() + 1);
+  dateInput.value = toLocalInputValue(ny);
+})();
+</script>
+</body>
+</html>

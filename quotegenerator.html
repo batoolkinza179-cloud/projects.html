@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quote Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F3F0E6;
+    --ink: #23241F;
+    --ink-soft: #6B6A5F;
+    --rule: rgba(35,36,31,0.14);
+    --forest: #3C5A45;
+    --forest-soft: #E1E9DF;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .card{
+    width: 100%;
+    max-width: 560px;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    padding: 48px 40px 34px;
+    box-shadow: 0 20px 50px rgba(35,36,31,0.08);
+    position: relative;
+  }
+  .mark{
+    font-family:'Fraunces', serif;
+    font-size: 64px;
+    color: var(--forest);
+    line-height: 0.6;
+    margin-bottom: 6px;
+    opacity: 0.9;
+  }
+  .quote-text{
+    font-family:'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(21px, 3.6vw, 27px);
+    line-height: 1.45;
+    color: var(--ink);
+    min-height: 130px;
+    display:flex;
+    align-items:center;
+    transition: opacity 0.2s ease;
+  }
+  .quote-author{
+    margin-top: 18px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--forest);
+  }
+  .quote-tag{
+    display:inline-block;
+    margin-top: 14px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--forest-soft);
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+
+  .bottom-row{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    margin-top: 34px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+  }
+  .icon-row{ display:flex; gap: 10px; }
+  .icon-btn{
+    background:none;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    font-size: 15px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .icon-btn:hover{ border-color: var(--forest); color: var(--forest); }
+  .icon-btn.copied{ color: var(--forest); border-color: var(--forest); }
+
+  .new-btn{
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor:pointer;
+    transition: background 0.15s ease;
+  }
+  .new-btn:hover{ background: var(--forest); }
+
+  .count-line{
+    text-align:center;
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 480px){
+    .card{ padding: 36px 24px 26px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="mark">“</div>
+  <p class="quote-text" id="quoteText"></p>
+  <p class="quote-author" id="quoteAuthor"></p>
+  <span class="quote-tag" id="quoteTag"></span>
+
+  <div class="bottom-row">
+    <div class="icon-row">
+      <button class="icon-btn" id="copyBtn" title="Copy quote" aria-label="Copy quote">⧉</button>
+      <button class="icon-btn" id="tweetBtn" title="Share on X" aria-label="Share on X">𝕏</button>
+    </div>
+    <button class="new-btn" id="newBtn">New quote</button>
+  </div>
+</div>
+<p class="count-line" id="countLine"></p>
+
+<script>
+(function(){
+  const quotes = [
+    { text: "The best code is the code you never had to write.", author: "Unknown", tag: "Programming" },
+    { text: "Simplicity is the soul of efficiency.", author: "Austin Freeman", tag: "Design" },
+    { text: "Make it work, make it right, make it fast.", author: "Kent Beck", tag: "Engineering" },
+    { text: "A person who never made a mistake never tried anything new.", author: "Albert Einstein", tag: "Growth" },
+    { text: "Done is better than perfect.", author: "Sheryl Sandberg", tag: "Productivity" },
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", tag: "Work" },
+    { text: "First, solve the problem. Then, write the code.", author: "John Johnson", tag: "Programming" },
+    { text: "Discipline equals freedom.", author: "Jocko Willink", tag: "Discipline" },
+    { text: "What gets measured gets managed.", author: "Peter Drucker", tag: "Focus" },
+    { text: "Good design is as little design as possible.", author: "Dieter Rams", tag: "Design" },
+    { text: "The expert in anything was once a beginner.", author: "Helen Hayes", tag: "Growth" },
+    { text: "Slow is smooth, and smooth is fast.", author: "Unknown", tag: "Discipline" }
+  ];
+
+  let lastIndex = -1;
+  const textEl = document.getElementById('quoteText');
+  const authorEl = document.getElementById('quoteAuthor');
+  const tagEl = document.getElementById('quoteTag');
+  const countLine = document.getElementById('countLine');
+  const copyBtn = document.getElementById('copyBtn');
+  const tweetBtn = document.getElementById('tweetBtn');
+  const newBtn = document.getElementById('newBtn');
+
+  function pickQuote(){
+    let i;
+    do { i = Math.floor(Math.random() * quotes.length); } while (i === lastIndex && quotes.length > 1);
+    lastIndex = i;
+    return quotes[i];
+  }
+
+  function showQuote(){
+    const q = pickQuote();
+    textEl.style.opacity = 0;
+    setTimeout(() => {
+      textEl.textContent = '“' + q.text + '”';
+      authorEl.textContent = '— ' + q.author;
+      tagEl.textContent = q.tag;
+      textEl.style.opacity = 1;
+    }, 150);
+    countLine.textContent = quotes.length + ' quotes in this collection';
+  }
+
+  copyBtn.addEventListener('click', () => {
+    const full = textEl.textContent + ' ' + authorEl.textContent;
+    navigator.clipboard.writeText(full).then(() => {
+      copyBtn.classList.add('copied');
+      copyBtn.textContent = '✓';
+      setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.textContent = '⧉'; }, 1400);
+    });
+  });
+
+  tweetBtn.addEventListener('click', () => {
+    const text = encodeURIComponent(textEl.textContent + ' ' + authorEl.textContent);
+    window.open('https://twitter.com/intent/tweet?text=' + text, '_blank');
+  });
+
+  newBtn.addEventListener('click', showQuote);
+
+  showQuote();
+})();
+</script>
+</body>
+</html>

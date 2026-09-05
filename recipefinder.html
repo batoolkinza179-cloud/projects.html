@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pantry First — Recipe Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#211d18;
+    --panel:#efe7d8;
+    --panel-dim:#e2d8c2;
+    --frame:#20231f;
+    --yolk:#e3a72e;
+    --sage:#7c8c5e;
+    --tomato:#c1442d;
+    --paper:#faf7ef;
+    --line: rgba(33,29,24,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;font-family:'Work Sans',sans-serif;color:var(--ink);background:var(--frame);}
+  body{min-height:100vh;}
+
+  #app{max-width:1180px;margin:0 auto;padding:0 20px 60px 20px;}
+
+  /* ---- Header ---- */
+  header{
+    padding:40px 0 24px 0;
+    color:var(--paper);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.16em;
+    text-transform:uppercase; color:var(--yolk); display:flex; align-items:center; gap:10px; margin-bottom:10px;
+  }
+  .eyebrow::after{content:'';flex:1;height:1px;background:rgba(250,247,239,0.18);}
+  h1{
+    font-family:'DM Serif Display',serif; font-weight:400; font-size:40px; margin:0 0 8px 0;
+    letter-spacing:-0.01em; line-height:1.05;
+  }
+  h1 span{color:var(--sage); font-style:italic;}
+  .sub{font-size:14.5px; color:rgba(250,247,239,0.72); max-width:520px; line-height:1.55; margin:0;}
+
+  /* ---- Pantry input ---- */
+  #pantry-bar{
+    background:var(--panel); border-radius:12px; padding:20px 22px; margin:22px 0 18px 0;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  }
+  #pantry-label{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--ink); opacity:0.6; margin-bottom:10px;
+  }
+  #ingredient-input-row{display:flex; gap:8px; margin-bottom:12px;}
+  #ingredient-input{
+    flex:1; padding:10px 14px; border-radius:7px; border:1.5px solid var(--line);
+    font-family:'Work Sans',sans-serif; font-size:14px; background:var(--paper); color:var(--ink);
+  }
+  #ingredient-input:focus{outline:2px solid var(--sage); outline-offset:1px; border-color:var(--sage);}
+  #add-btn{
+    padding:10px 18px; border-radius:7px; border:none; background:var(--ink); color:var(--paper);
+    font-family:'Work Sans',sans-serif; font-weight:600; font-size:13px; cursor:pointer;
+  }
+  #add-btn:hover{background:var(--sage);}
+
+  #quick-add{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+  .quick-chip{
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    padding:4px 10px; border-radius:20px; border:1px dashed rgba(33,29,24,0.35);
+    background:transparent; cursor:pointer; color:var(--ink);
+  }
+  .quick-chip:hover{border-color:var(--ink); background:rgba(33,29,24,0.05);}
+
+  #pantry-chips{display:flex; flex-wrap:wrap; gap:8px; min-height:32px;}
+  .chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--sage); color:var(--paper); padding:6px 8px 6px 12px; border-radius:20px;
+    font-size:13px; font-weight:500;
+  }
+  .chip button{
+    background:rgba(255,255,255,0.25); border:none; color:var(--paper); width:18px;height:18px;
+    border-radius:50%; cursor:pointer; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .chip button:hover{background:rgba(255,255,255,0.45);}
+  #empty-pantry-hint{font-size:12.5px; color:rgba(33,29,24,0.45); font-style:italic; padding:6px 0;}
+
+  /* ---- Filters ---- */
+  #filters{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px;}
+  .filter-pill{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.03em;
+    padding:7px 13px; border-radius:20px; border:1.5px solid rgba(250,247,239,0.3);
+    background:transparent; color:rgba(250,247,239,0.85); cursor:pointer; text-transform:uppercase;
+  }
+  .filter-pill.active{background:var(--yolk); border-color:var(--yolk); color:var(--frame); font-weight:700;}
+  .filter-pill:hover{border-color:var(--yolk);}
+
+  /* ---- Recipe grid ---- */
+  #result-count{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:rgba(250,247,239,0.55);
+    margin-bottom:14px; letter-spacing:0.03em;
+  }
+  #grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px,1fr)); gap:16px;}
+
+  .recipe-card{
+    background:var(--panel); border-radius:10px; padding:18px; cursor:pointer;
+    position:relative; transition:transform .15s ease, box-shadow .15s ease;
+    border:1px solid transparent;
+  }
+  .recipe-card:hover{transform:translateY(-3px); box-shadow:0 10px 24px rgba(0,0,0,0.28);}
+
+  .match-badge{
+    position:absolute; top:14px; right:14px;
+    font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+    padding:4px 9px; border-radius:20px;
+  }
+  .match-full{background:var(--sage); color:var(--paper);}
+  .match-partial{background:var(--yolk); color:var(--frame);}
+  .match-none{background:rgba(33,29,24,0.08); color:rgba(33,29,24,0.5);}
+
+  .recipe-title{
+    font-family:'DM Serif Display',serif; font-size:20px; margin:0 40px 6px 0; line-height:1.15;
+  }
+  .recipe-meta{
+    display:flex; gap:12px; font-family:'JetBrains Mono',monospace; font-size:11px;
+    color:rgba(33,29,24,0.55); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.02em;
+  }
+  .recipe-tags{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;}
+  .tag{
+    font-size:10.5px; padding:3px 8px; border-radius:4px; background:rgba(33,29,24,0.07);
+    font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.02em;
+  }
+  .recipe-ing-preview{font-size:12.5px; color:rgba(33,29,24,0.65); line-height:1.5;}
+  .recipe-ing-preview b{color:var(--sage); font-weight:600;}
+
+  #no-results{color:rgba(250,247,239,0.55); font-size:14px; padding:40px 0; text-align:center;}
+
+  /* ---- Detail modal ---- */
+  #overlay{
+    position:fixed; inset:0; background:rgba(20,18,14,0.72); display:none;
+    align-items:flex-start; justify-content:center; padding:5vh 16px; z-index:100; overflow-y:auto;
+  }
+  #overlay.open{display:flex;}
+  #detail{
+    background:var(--paper); border-radius:14px; max-width:640px; width:100%; padding:32px;
+    position:relative; margin-bottom:5vh;
+  }
+  #close-btn{
+    position:absolute; top:18px; right:18px; width:32px; height:32px; border-radius:50%;
+    border:1.5px solid var(--line); background:transparent; cursor:pointer; font-size:15px; color:var(--ink);
+  }
+  #close-btn:hover{background:var(--panel-dim);}
+  #detail-title{font-family:'DM Serif Display',serif; font-size:30px; margin:0 40px 8px 0; line-height:1.1;}
+  #detail-meta{
+    display:flex; gap:16px; font-family:'JetBrains Mono',monospace; font-size:11.5px;
+    color:rgba(33,29,24,0.6); text-transform:uppercase; margin-bottom:16px;
+  }
+  #detail-tags{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:22px;}
+  .detail-section-label{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--sage); margin-bottom:10px; border-bottom:1px solid var(--line); padding-bottom:6px;
+  }
+  #detail-ingredients{list-style:none; padding:0; margin:0 0 26px 0;}
+  #detail-ingredients li{
+    padding:6px 0; font-size:14px; display:flex; align-items:center; gap:8px; border-bottom:1px dashed var(--line);
+  }
+  #detail-ingredients li.have{font-weight:600;}
+  #detail-ingredients li .mark{width:16px; text-align:center; color:var(--sage); font-weight:700;}
+  #detail-steps{padding:0; margin:0; list-style:none; counter-reset:step;}
+  #detail-steps li{
+    counter-increment:step; padding:10px 0 10px 34px; position:relative; font-size:14px; line-height:1.55;
+    border-bottom:1px solid var(--line);
+  }
+  #detail-steps li::before{
+    content:counter(step); position:absolute; left:0; top:10px; width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:var(--paper); font-family:'JetBrains Mono',monospace; font-size:11px;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  @media(max-width:600px){
+    h1{font-size:30px;}
+    #grid{grid-template-columns:1fr;}
+  }
+  :focus-visible{outline:2px solid var(--yolk); outline-offset:2px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="eyebrow">Pantry First · Recipe Finder</div>
+    <h1>Cook with what's<br/><span>already in the kitchen.</span></h1>
+    <p class="sub">Add the ingredients you've got on hand. Recipes sort themselves by how much you can make right now — no last-minute grocery run required.</p>
+  </header>
+
+  <div id="pantry-bar">
+    <div id="pantry-label">Your pantry</div>
+    <div id="ingredient-input-row">
+      <input id="ingredient-input" type="text" placeholder="Type an ingredient and hit enter — e.g. garlic" />
+      <button id="add-btn">Add</button>
+    </div>
+    <div id="quick-add"></div>
+    <div id="pantry-chips"></div>
+  </div>
+
+  <div id="filters"></div>
+  <div id="result-count"></div>
+  <div id="grid"></div>
+</div>
+
+<div id="overlay">
+  <div id="detail">
+    <button id="close-btn" aria-label="Close">✕</button>
+    <h2 id="detail-title"></h2>
+    <div id="detail-meta"></div>
+    <div id="detail-tags"></div>
+    <div class="detail-section-label">Ingredients</div>
+    <ul id="detail-ingredients"></ul>
+    <div class="detail-section-label">Steps</div>
+    <ol id="detail-steps"></ol>
+  </div>
+</div>
+
+<script>
+const RECIPES = [
+  { id:1, title:'Garlic Butter Pasta', time:20, servings:2, diet:['vegetarian'],
+    ingredients:['pasta','garlic','butter','parmesan','black pepper','parsley'],
+    steps:['Boil pasta in salted water until al dente, reserving a cup of pasta water.','Melt butter in a pan, add sliced garlic, cook gently until fragrant, not browned.','Toss drained pasta into the pan with a splash of pasta water.','Stir in parmesan off heat until glossy. Finish with parsley and black pepper.'] },
+  { id:2, title:'Sheet-Pan Lemon Chicken Thighs', time:40, servings:4, diet:['gluten-free'],
+    ingredients:['chicken thighs','lemon','garlic','olive oil','potatoes','rosemary'],
+    steps:['Toss potatoes with olive oil, salt, and rosemary on a sheet pan.','Nestle chicken thighs among the potatoes, skin side up.','Scatter garlic cloves and lemon slices over everything.','Roast at 425°F for 35–40 minutes until skin is crisp and chicken hits 165°F.'] },
+  { id:3, title:'Weeknight Chickpea Curry', time:30, servings:4, diet:['vegan','gluten-free'],
+    ingredients:['chickpeas','onion','garlic','ginger','coconut milk','tomato','curry powder','rice'],
+    steps:['Sauté diced onion until soft, then add garlic and ginger.','Stir in curry powder and toast for 30 seconds.','Add tomato, chickpeas, and coconut milk. Simmer 15 minutes.','Serve over rice.'] },
+  { id:4, title:'Egg Fried Rice', time:15, servings:2, diet:['vegetarian'],
+    ingredients:['rice','eggs','soy sauce','scallion','garlic','frozen peas'],
+    steps:['Scramble eggs in a hot wok, set aside.','Fry garlic and peas briefly, then add cold day-old rice, breaking clumps.','Push rice aside, add soy sauce, then mix everything with eggs.','Finish with sliced scallion.'] },
+  { id:5, title:'Tomato Basil Soup', time:35, servings:4, diet:['vegetarian','gluten-free'],
+    ingredients:['tomato','onion','garlic','vegetable broth','butter','basil','cream'],
+    steps:['Sauté onion and garlic until translucent.','Add tomato and broth, simmer 20 minutes.','Blend until smooth, stir in cream and torn basil.'] },
+  { id:6, title:'Classic Beef Tacos', time:25, servings:3, diet:[],
+    ingredients:['ground beef','onion','garlic','taco seasoning','tortillas','lettuce','cheese','lime'],
+    steps:['Brown ground beef with diced onion and garlic.','Stir in taco seasoning with a splash of water, simmer 5 minutes.','Warm tortillas, fill with beef, lettuce, and cheese.','Finish with a squeeze of lime.'] },
+  { id:7, title:'Roasted Vegetable Grain Bowl', time:35, servings:2, diet:['vegan'],
+    ingredients:['quinoa','sweet potato','chickpeas','olive oil','tahini','lemon','kale'],
+    steps:['Roast cubed sweet potato and chickpeas with olive oil at 400°F for 25 minutes.','Cook quinoa according to package directions.','Massage kale with a little olive oil and lemon.','Assemble bowls and drizzle with tahini-lemon dressing.'] },
+  { id:8, title:'Shakshuka', time:30, servings:3, diet:['vegetarian','gluten-free'],
+    ingredients:['eggs','tomato','onion','garlic','bell pepper','cumin','paprika','feta'],
+    steps:['Sauté onion and bell pepper until soft, add garlic, cumin, and paprika.','Add crushed tomato, simmer 10 minutes to thicken.','Crack eggs directly into the sauce, cover, and cook until whites set.','Top with crumbled feta.'] },
+  { id:9, title:'Miso Butter Salmon', time:20, servings:2, diet:['gluten-free'],
+    ingredients:['salmon','miso paste','butter','garlic','scallion','rice'],
+    steps:['Mix softened butter with miso paste and minced garlic.','Spread over salmon fillets.','Broil 8–10 minutes until glazed and just cooked through.','Serve over rice with sliced scallion.'] },
+  { id:10, title:'Caprese Salad', time:10, servings:2, diet:['vegetarian','gluten-free'],
+    ingredients:['tomato','mozzarella','basil','olive oil','balsamic'],
+    steps:['Slice tomato and mozzarella into even rounds.','Layer alternating with basil leaves.','Drizzle with olive oil and balsamic, finish with salt and pepper.'] },
+  { id:11, title:'Black Bean Quesadillas', time:15, servings:2, diet:['vegetarian'],
+    ingredients:['black beans','tortillas','cheese','onion','cumin','salsa'],
+    steps:['Mash black beans with sautéed onion and cumin.','Spread onto tortillas with cheese, fold in half.','Cook in a dry pan until golden and cheese melts.','Serve with salsa.'] },
+  { id:12, title:'Peanut Noodles', time:15, servings:2, diet:['vegan'],
+    ingredients:['noodles','peanut butter','soy sauce','garlic','lime','cucumber','scallion'],
+    steps:['Whisk peanut butter, soy sauce, minced garlic, and lime juice into a sauce, thinning with warm water.','Toss with cooked noodles.','Top with sliced cucumber and scallion.'] }
+];
+
+const DIET_FILTERS = ['vegetarian','vegan','gluten-free'];
+const QUICK_ADD = ['garlic','onion','eggs','rice','olive oil','butter','tomato','lemon'];
+
+let pantry = new Set();
+let activeDiets = new Set();
+
+// ---- Pantry input ----
+const chipsEl = document.getElementById('pantry-chips');
+const inputEl = document.getElementById('ingredient-input');
+
+function addIngredient(raw){
+  const val = raw.trim().toLowerCase();
+  if(!val) return;
+  pantry.add(val);
+  renderPantry();
+  renderGrid();
+}
+
+document.getElementById('add-btn').addEventListener('click', ()=>{
+  addIngredient(inputEl.value);
+  inputEl.value='';
+});
+inputEl.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ addIngredient(inputEl.value); inputEl.value=''; }
+});
+
+const quickAddEl = document.getElementById('quick-add');
+QUICK_ADD.forEach(ing=>{
+  const btn = document.createElement('button');
+  btn.className='quick-chip';
+  btn.textContent='+ '+ing;
+  btn.addEventListener('click', ()=> addIngredient(ing));
+  quickAddEl.appendChild(btn);
+});
+
+function renderPantry(){
+  chipsEl.innerHTML='';
+  if(pantry.size===0){
+    chipsEl.innerHTML = '<div id="empty-pantry-hint">No ingredients yet — add a few, or try one of the quick-add chips above.</div>';
+    return;
+  }
+  [...pantry].forEach(ing=>{
+    const chip = document.createElement('div');
+    chip.className='chip';
+    chip.innerHTML = `${ing} <button aria-label="remove ${ing}">✕</button>`;
+    chip.querySelector('button').addEventListener('click', ()=>{
+      pantry.delete(ing);
+      renderPantry();
+      renderGrid();
+    });
+    chipsEl.appendChild(chip);
+  });
+}
+renderPantry();
+
+// ---- Diet filters ----
+const filtersEl = document.getElementById('filters');
+DIET_FILTERS.forEach(d=>{
+  const btn = document.createElement('button');
+  btn.className='filter-pill';
+  btn.textContent = d;
+  btn.addEventListener('click', ()=>{
+    if(activeDiets.has(d)){ activeDiets.delete(d); btn.classList.remove('active'); }
+    else { activeDiets.add(d); btn.classList.add('active'); }
+    renderGrid();
+  });
+  filtersEl.appendChild(btn);
+});
+
+// ---- Grid ----
+const gridEl = document.getElementById('grid');
+const countEl = document.getElementById('result-count');
+
+function matchInfo(recipe){
+  const have = recipe.ingredients.filter(i=>pantry.has(i));
+  return { have: have.length, total: recipe.ingredients.length };
+}
+
+function renderGrid(){
+  let list = RECIPES.filter(r=>{
+    if(activeDiets.size===0) return true;
+    return [...activeDiets].every(d=>r.diet.includes(d));
+  });
+
+  list = list.map(r=>({ r, m:matchInfo(r) }))
+    .sort((a,b)=> (b.m.have/b.m.total) - (a.m.have/a.m.total) || a.r.title.localeCompare(b.r.title));
+
+  countEl.textContent = pantry.size>0
+    ? `${list.length} recipes · sorted by pantry match`
+    : `${list.length} recipes · add ingredients above to sort by match`;
+
+  gridEl.innerHTML='';
+  if(list.length===0){
+    gridEl.innerHTML = '<div id="no-results">No recipes match those filters yet.</div>';
+    return;
+  }
+
+  list.forEach(({r,m})=>{
+    const card = document.createElement('div');
+    card.className='recipe-card';
+
+    let badgeClass = 'match-none', badgeText = '';
+    if(pantry.size>0){
+      if(m.have===m.total){ badgeClass='match-full'; badgeText='Ready ✓'; }
+      else if(m.have>0){ badgeClass='match-partial'; badgeText=`${m.have}/${m.total} have`; }
+      else { badgeClass='match-none'; badgeText=`0/${m.total} have`; }
+    }
+
+    const previewIngs = r.ingredients.slice(0,4).map(i=>{
+      return pantry.has(i) ? `<b>${i}</b>` : i;
+    }).join(', ') + (r.ingredients.length>4 ? '…' : '');
+
+    card.innerHTML = `
+      ${pantry.size>0 ? `<div class="match-badge ${badgeClass}">${badgeText}</div>` : ''}
+      <h3 class="recipe-title">${r.title}</h3>
+      <div class="recipe-meta"><span>${r.time} min</span><span>Serves ${r.servings}</span></div>
+      <div class="recipe-tags">${r.diet.map(d=>`<span class="tag">${d}</span>`).join('')}</div>
+      <div class="recipe-ing-preview">${previewIngs}</div>
+    `;
+    card.addEventListener('click', ()=> openDetail(r));
+    gridEl.appendChild(card);
+  });
+}
+renderGrid();
+
+// ---- Detail modal ----
+const overlay = document.getElementById('overlay');
+document.getElementById('close-btn').addEventListener('click', ()=> overlay.classList.remove('open'));
+overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('open'); });
+
+function openDetail(r){
+  document.getElementById('detail-title').textContent = r.title;
+  document.getElementById('detail-meta').innerHTML = `<span>${r.time} min</span><span>Serves ${r.servings}</span>`;
+  document.getElementById('detail-tags').innerHTML = r.diet.map(d=>`<span class="tag">${d}</span>`).join('') || '';
+
+  const ingList = document.getElementById('detail-ingredients');
+  ingList.innerHTML='';
+  r.ingredients.forEach(i=>{
+    const li = document.createElement('li');
+    const has = pantry.has(i);
+    if(has) li.classList.add('have');
+    li.innerHTML = `<span class="mark">${has ? '✓' : '·'}</span>${i}`;
+    ingList.appendChild(li);
+  });
+
+  const stepsList = document.getElementById('detail-steps');
+  stepsList.innerHTML='';
+  r.steps.forEach(s=>{
+    const li = document.createElement('li');
+    li.textContent = s;
+    stepsList.appendChild(li);
+  });
+
+  overlay.classList.add('open');
+}
+</script>
+</body>
+</html>

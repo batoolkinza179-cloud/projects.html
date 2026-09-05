@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Ledger — Expense Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#e3ecd9;
+    --paper-line:#c7d6ba;
+    --ink:#1f3327;
+    --ink-soft:#3f5747;
+    --stamp:#a13d3d;
+    --gold:#af8f3c;
+    --gold-bright:#cca94a;
+    --cream:#f7f4ea;
+    --line: rgba(31,51,39,0.16);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ink);color:var(--ink);font-family:'Source Sans 3',sans-serif;}
+  #page{max-width:980px;margin:0 auto;padding:26px 20px 70px 20px;}
+
+  /* ---- Header ---- */
+  #header{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; padding:0 4px;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--gold-bright); margin-bottom:6px;
+  }
+  h1{font-family:'Lora',serif; font-weight:600; font-size:28px; margin:0; color:var(--cream);}
+  #month-label{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:rgba(247,244,234,0.55); margin-top:4px;}
+
+  #balance-box{text-align:right;}
+  #balance-label{font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(247,244,234,0.5);}
+  #balance-amount{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:26px; color:var(--cream);}
+  #balance-amount.over{color:var(--stamp);}
+
+  /* ---- Ledger book ---- */
+  #ledger-book{background:var(--paper); border-radius:8px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.35); overflow:hidden;}
+
+  /* ---- Tabs (ledger book tabs on the edge) ---- */
+  #tabs{display:flex; background:var(--ink); padding:0 0 0 4px;}
+  .tab{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.04em; text-transform:uppercase;
+    padding:12px 20px; cursor:pointer; color:rgba(247,244,234,0.5); border-radius:8px 8px 0 0; margin-right:2px;
+  }
+  .tab.active{background:var(--paper); color:var(--ink); font-weight:700;}
+  .tab:hover:not(.active){color:rgba(247,244,234,0.85);}
+
+  #ledger-body{padding:26px 30px;}
+
+  /* ---- Add expense form ---- */
+  #add-form{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:26px;
+    padding:18px; background:var(--cream); border-radius:8px; border:1px solid var(--paper-line);
+  }
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);}
+  .field input, .field select{
+    padding:8px 10px; border-radius:5px; border:1px solid var(--line); font-family:'Source Sans 3',sans-serif;
+    font-size:13.5px; background:#fff; color:var(--ink);
+  }
+  #amount-field input{font-family:'JetBrains Mono',monospace; width:100px;}
+  #note-field input{width:200px;}
+  #add-btn{
+    background:var(--ink); color:var(--cream); border:none; padding:9px 20px; border-radius:6px; font-weight:600;
+    font-size:13.5px; cursor:pointer; height:37px;
+  }
+  #add-btn:hover{background:var(--ink-soft);}
+
+  /* ---- Category summary (ruled bars) ---- */
+  #category-summary{margin-bottom:26px;}
+  .cat-row{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .cat-name{width:110px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink); flex-shrink:0;}
+  .cat-bar-track{flex:1; height:10px; background:var(--paper-line); border-radius:5px; overflow:hidden;}
+  .cat-bar-fill{height:100%; border-radius:5px;}
+  .cat-amount{font-family:'JetBrains Mono',monospace; font-size:12px; width:70px; text-align:right; flex-shrink:0;}
+
+  /* ---- Ledger table ---- */
+  table{width:100%; border-collapse:collapse;}
+  thead th{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--ink-soft); text-align:left; padding:8px 10px; border-bottom:2px solid var(--ink);
+  }
+  thead th.num{text-align:right;}
+  tbody tr{border-bottom:1px dashed var(--paper-line);}
+  tbody tr:nth-child(even){background:rgba(255,255,255,0.35);}
+  tbody td{padding:10px 10px; font-size:13.5px; vertical-align:middle;}
+  td.num{text-align:right; font-family:'JetBrains Mono',monospace;}
+  td.running{font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--ink-soft);}
+  .cat-pill{
+    font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; padding:3px 8px;
+    border-radius:4px; color:#fff; display:inline-block;
+  }
+  .del-btn{background:none; border:none; color:var(--stamp); cursor:pointer; font-size:12px; text-decoration:underline; opacity:0.7;}
+  .del-btn:hover{opacity:1;}
+  #empty-row td{text-align:center; padding:30px 0; color:var(--ink-soft); font-style:italic;}
+
+  #ledger-footer-total{
+    display:flex; justify-content:flex-end; gap:20px; padding:14px 10px 4px 10px; font-family:'JetBrains Mono',monospace;
+    font-size:14px; font-weight:700; border-top:2px solid var(--ink); margin-top:4px;
+  }
+
+  @media(max-width:640px){
+    #add-form{flex-direction:column; align-items:stretch;}
+    #amount-field input, #note-field input{width:100%;}
+    #header{flex-direction:column; align-items:flex-start; gap:10px;}
+    #balance-box{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div id="page">
+  <div id="header">
+    <div>
+      <div class="eyebrow">Freelance Ledger</div>
+      <h1>The Ledger</h1>
+      <div id="month-label">March 2026 · Business expenses</div>
+    </div>
+    <div id="balance-box">
+      <div id="balance-label">Spent this month</div>
+      <div id="balance-amount">$0.00</div>
+    </div>
+  </div>
+
+  <div id="ledger-book">
+    <div id="tabs">
+      <div class="tab active" data-tab="entries">Entries</div>
+      <div class="tab" data-tab="categories">By Category</div>
+    </div>
+
+    <div id="ledger-body">
+      <div id="add-form">
+        <div class="field" id="amount-field">
+          <label>Amount</label>
+          <input type="number" id="input-amount" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="input-category">
+            <option value="Software">Software</option>
+            <option value="Travel">Travel</option>
+            <option value="Office">Office</option>
+            <option value="Meals">Meals</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field" id="note-field">
+          <label>Note</label>
+          <input type="text" id="input-note" placeholder="What was it for?" />
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="input-date" />
+        </div>
+        <button id="add-btn">+ Add entry</button>
+      </div>
+
+      <div id="entries-panel">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Note</th>
+              <th>Category</th>
+              <th class="num">Amount</th>
+              <th class="num">Running total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entries-body"></tbody>
+        </table>
+        <div id="ledger-footer-total"><span>Total</span><span id="table-total">$0.00</span></div>
+      </div>
+
+      <div id="categories-panel" style="display:none">
+        <div id="category-summary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORY_COLORS = {
+  Software:'#2c4258', Travel:'#af8f3c', Office:'#3f5a3f', Meals:'#a13d3d', Marketing:'#6a4a8a', Other:'#5a4a34'
+};
+
+let entries = [
+  { id:1, date:'2026-03-02', note:'Design software subscription', category:'Software', amount:29.99 },
+  { id:2, date:'2026-03-04', note:'Client lunch meeting', category:'Meals', amount:54.20 },
+  { id:3, date:'2026-03-06', note:'Flight to conference', category:'Travel', amount:312.00 },
+  { id:4, date:'2026-03-08', note:'Printer paper + ink', category:'Office', amount:41.75 },
+  { id:5, date:'2026-03-11', note:'Instagram ad campaign', category:'Marketing', amount:120.00 },
+  { id:6, date:'2026-03-14', note:'Cloud storage plan', category:'Software', amount:12.00 },
+  { id:7, date:'2026-03-17', note:'Conference hotel, 2 nights', category:'Travel', amount:268.50 },
+  { id:8, date:'2026-03-20', note:'Coffee with collaborator', category:'Meals', amount:14.60 }
+];
+let nextId = 9;
+
+const entriesBody = document.getElementById('entries-body');
+const balanceAmount = document.getElementById('balance-amount');
+const tableTotal = document.getElementById('table-total');
+const catSummary = document.getElementById('category-summary');
+const MONTHLY_BUDGET = 900;
+
+function formatMoney(n){ return '$' + n.toFixed(2); }
+
+function renderEntries(){
+  const sorted = [...entries].sort((a,b)=> new Date(a.date) - new Date(b.date));
+  entriesBody.innerHTML='';
+  let running = 0;
+  if(sorted.length===0){
+    entriesBody.innerHTML = '<tr id="empty-row"><td colspan="6">No entries yet — add your first expense above.</td></tr>';
+  }
+  sorted.forEach(e=>{
+    running += e.amount;
+    const row = document.createElement('tr');
+    const color = CATEGORY_COLORS[e.category] || '#5a4a34';
+    row.innerHTML = `
+      <td>${e.date}</td>
+      <td>${e.note}</td>
+      <td><span class="cat-pill" style="background:${color}">${e.category}</span></td>
+      <td class="num">${formatMoney(e.amount)}</td>
+      <td class="running num">${formatMoney(running)}</td>
+      <td><button class="del-btn" data-id="${e.id}">remove</button></td>
+    `;
+    entriesBody.appendChild(row);
+  });
+  const total = entries.reduce((s,e)=>s+e.amount,0);
+  tableTotal.textContent = formatMoney(total);
+  balanceAmount.textContent = formatMoney(total);
+  balanceAmount.classList.toggle('over', total > MONTHLY_BUDGET);
+
+  entriesBody.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      entries = entries.filter(e=>e.id !== parseInt(btn.dataset.id));
+      renderEntries();
+      renderCategories();
+    });
+  });
+}
+
+function renderCategories(){
+  const totals = {};
+  entries.forEach(e=>{ totals[e.category] = (totals[e.category]||0) + e.amount; });
+  const maxVal = Math.max(1, ...Object.values(totals));
+  catSummary.innerHTML='';
+  Object.keys(CATEGORY_COLORS).forEach(cat=>{
+    const val = totals[cat] || 0;
+    const pct = (val/maxVal)*100;
+    const row = document.createElement('div');
+    row.className='cat-row';
+    row.innerHTML = `
+      <div class="cat-name">${cat}</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%; background:${CATEGORY_COLORS[cat]}"></div></div>
+      <div class="cat-amount">${formatMoney(val)}</div>
+    `;
+    catSummary.appendChild(row);
+  });
+}
+
+document.getElementById('add-btn').addEventListener('click', ()=>{
+  const amount = parseFloat(document.getElementById('input-amount').value);
+  const category = document.getElementById('input-category').value;
+  const note = document.getElementById('input-note').value.trim() || '(no note)';
+  const date = document.getElementById('input-date').value || new Date().toISOString().slice(0,10);
+  if(!amount || amount<=0) return;
+  entries.push({ id: nextId++, date, note, category, amount });
+  document.getElementById('input-amount').value='';
+  document.getElementById('input-note').value='';
+  renderEntries();
+  renderCategories();
+});
+
+// ---- Tabs ----
+const tabs = document.querySelectorAll('.tab');
+const entriesPanel = document.getElementById('entries-panel');
+const categoriesPanel = document.getElementById('categories-panel');
+tabs.forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    entriesPanel.style.display = which==='entries' ? 'block' : 'none';
+    categoriesPanel.style.display = which==='categories' ? 'block' : 'none';
+  });
+});
+
+renderEntries();
+renderCategories();
+</script>
+</body>
+</html>

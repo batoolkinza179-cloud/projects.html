@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Slider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #1C1F26;
+    --amber: #E8A94B;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .slider{
+    width: 100%;
+    max-width: 640px;
+  }
+  .frame{
+    position:relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 18px;
+    overflow:hidden;
+    background: var(--panel);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  }
+  .track{
+    display:flex;
+    height:100%;
+    transition: transform 0.45s cubic-bezier(.4,0,.2,1);
+  }
+  .slide{
+    flex: 0 0 100%;
+    height:100%;
+    position:relative;
+  }
+  .slide img{
+    width:100%; height:100%;
+    object-fit: cover;
+    display:block;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  .caption{
+    position:absolute; left:0; right:0; bottom:0;
+    padding: 20px 22px;
+    background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+  }
+  .caption .eyebrow{
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 4px;
+  }
+  .caption h3{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #fff;
+  }
+
+  .nav-btn{
+    position:absolute; top:50%; transform: translateY(-50%);
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(20,22,26,0.55);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 18px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition: background 0.15s ease;
+    z-index: 5;
+  }
+  .nav-btn:hover{ background: rgba(232,169,75,0.85); color:#14161A; }
+  .nav-prev{ left: 14px; }
+  .nav-next{ right: 14px; }
+
+  .bottom-row{
+    display:flex; align-items:center; justify-content: space-between;
+    margin-top: 16px;
+  }
+  .dots{ display:flex; gap: 8px; }
+  .dot{
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--dim);
+    cursor:pointer;
+    transition: background 0.15s ease, width 0.2s ease;
+    padding:0;
+  }
+  .dot.active{ background: var(--amber); border-color: var(--amber); width: 22px; border-radius: 5px; }
+
+  .counter{ font-size: 12px; color: var(--dim); }
+
+  .play-btn{
+    background:none; border: 1px solid var(--dim);
+    color: var(--dim);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 100px;
+    cursor:pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .play-btn:hover{ border-color: var(--amber); color: var(--amber); }
+</style>
+</head>
+<body>
+
+<div class="slider">
+  <div class="frame" id="frame">
+    <div class="track" id="track"></div>
+    <button class="nav-btn nav-prev" id="prevBtn" aria-label="Previous slide">‹</button>
+    <button class="nav-btn nav-next" id="nextBtn" aria-label="Next slide">›</button>
+  </div>
+
+  <div class="bottom-row">
+    <div class="dots" id="dots"></div>
+    <span class="counter" id="counter">1 / 5</span>
+    <button class="play-btn" id="playBtn">Pause</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const slides = [
+    { src: 'https://picsum.photos/id/1015/960/600', eyebrow: 'Landscape', title: 'Mountain river valley' },
+    { src: 'https://picsum.photos/id/1025/960/600', eyebrow: 'Portrait', title: 'A very good dog' },
+    { src: 'https://picsum.photos/id/1043/960/600', eyebrow: 'City', title: 'Streets after rain' },
+    { src: 'https://picsum.photos/id/1069/960/600', eyebrow: 'Nature', title: 'Fields at golden hour' },
+    { src: 'https://picsum.photos/id/1074/960/600', eyebrow: 'Wildlife', title: 'Forest edge, quiet morning' }
+  ];
+
+  const track = document.getElementById('track');
+  const dotsWrap = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const frame = document.getElementById('frame');
+  const playBtn = document.getElementById('playBtn');
+
+  let index = 0;
+  let playing = true;
+  let autoplayId = null;
+
+  slides.forEach(s => {
+    const slide = document.createElement('div');
+    slide.className = 'slide';
+    slide.innerHTML = `
+      <img src="${s.src}" alt="${s.title}" loading="lazy">
+      <div class="caption">
+        <p class="eyebrow">${s.eyebrow}</p>
+        <h3>${s.title}</h3>
+      </div>
+    `;
+    track.appendChild(slide);
+  });
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i+1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+
+  function update(){
+    track.style.transform = `translateX(-${index * 100}%)`;
+    counter.textContent = (index + 1) + ' / ' + slides.length;
+    [...dotsWrap.children].forEach((d, i) => d.classList.toggle('active', i === index));
+  }
+
+  function goTo(i){
+    index = (i + slides.length) % slides.length;
+    update();
+  }
+  function next(){ goTo(index + 1); }
+  function prev(){ goTo(index - 1); }
+
+  document.getElementById('nextBtn').addEventListener('click', () => { next(); restartAutoplay(); });
+  document.getElementById('prevBtn').addEventListener('click', () => { prev(); restartAutoplay(); });
+
+  function startAutoplay(){ autoplayId = setInterval(next, 4000); }
+  function stopAutoplay(){ clearInterval(autoplayId); }
+  function restartAutoplay(){ if (playing){ stopAutoplay(); startAutoplay(); } }
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    playBtn.textContent = playing ? 'Pause' : 'Play';
+    if (playing) startAutoplay(); else stopAutoplay();
+  });
+
+  // pause on hover
+  frame.addEventListener('mouseenter', stopAutoplay);
+  frame.addEventListener('mouseleave', () => { if (playing) startAutoplay(); });
+
+  // keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight'){ next(); restartAutoplay(); }
+    if (e.key === 'ArrowLeft'){ prev(); restartAutoplay(); }
+  });
+
+  // touch swipe
+  let touchStartX = null;
+  frame.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive:true });
+  frame.addEventListener('touchend', (e) => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40){ dx < 0 ? next() : prev(); restartAutoplay(); }
+    touchStartX = null;
+  });
+
+  update();
+  startAutoplay();
+})();
+</script>
+</body>
+</html>

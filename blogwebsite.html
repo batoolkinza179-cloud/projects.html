@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Field Notes — a blog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F3F0E6;
+    --paper-2: #EAE5D6;
+    --ink: #23241F;
+    --ink-soft: #6B6A5F;
+    --rule: rgba(35,36,31,0.14);
+    --forest: #3C5A45;
+    --forest-soft: #E1E9DF;
+    --rust: #A85A3C;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family:'Inter', sans-serif;
+  }
+  a{ color:inherit; }
+  .wrap{ max-width: 760px; margin:0 auto; padding: 0 22px 70px; }
+
+  /* ---- masthead ---- */
+  .masthead{
+    border-bottom: 2px solid var(--ink);
+    padding: 34px 0 18px;
+    text-align:center;
+  }
+  .masthead .issue{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .masthead h1{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(38px, 7vw, 58px);
+    letter-spacing: -0.01em;
+  }
+  .masthead .sub{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  .nav-row{
+    display:flex; justify-content:center; gap: 22px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .nav-row a{ text-decoration:none; color: var(--ink-soft); }
+  .nav-row a.active, .nav-row a:hover{ color: var(--forest); }
+
+  /* ---- featured post ---- */
+  .featured{
+    padding: 40px 0;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+  }
+  .featured .tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--forest);
+    background: var(--forest-soft);
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .featured h2{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 5vw, 38px);
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .featured .dropcap{
+    font-family:'Fraunces', serif;
+  }
+  .featured .dropcap::first-letter{
+    font-size: 52px;
+    font-weight: 700;
+    float:left;
+    line-height: 0.8;
+    margin: 4px 8px 0 0;
+    color: var(--forest);
+  }
+  .excerpt{ color: var(--ink-soft); font-size: 15.5px; max-width: 60ch; }
+  .meta-row{
+    margin-top: 16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  /* ---- post grid ---- */
+  .grid-heading{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 40px 0 4px;
+  }
+  .post-row{
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+  }
+  .post-row:hover h3{ color: var(--forest); }
+  .post-main{ flex:1; min-width:0; }
+  .post-row h3{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 6px;
+    transition: color 0.15s ease;
+  }
+  .post-row .excerpt{ font-size: 14px; }
+  .post-date{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    flex-shrink:0;
+  }
+
+  /* ---- article view ---- */
+  .article{ display:none; padding: 40px 0; }
+  .article.open{ display:block; }
+  .back-btn{
+    background:none; border:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    margin-bottom: 24px;
+    letter-spacing: 0.04em;
+  }
+  .back-btn:hover{ color: var(--forest); }
+  .article h2{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(30px, 6vw, 42px);
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+  .article .meta-row{ margin: 0 0 26px; }
+  .article-body{ font-size: 16.5px; line-height: 1.85; }
+  .article-body p{ margin-bottom: 18px; }
+  .article-body p:first-of-type::first-letter{
+    font-size: 54px;
+    font-weight: 700;
+    font-family:'Fraunces', serif;
+    float:left;
+    line-height: 0.8;
+    margin: 6px 8px 0 0;
+    color: var(--forest);
+  }
+
+  .home-view.hidden{ display:none; }
+
+  footer{
+    text-align:center;
+    padding: 30px 0 0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="issue">Vol. 1 · Issue 04</p>
+    <h1>The Field Notes</h1>
+    <p class="sub">Dispatches on building things well</p>
+  </header>
+
+  <nav class="nav-row">
+    <a href="#" class="active">All posts</a>
+    <a href="#">Writing</a>
+    <a href="#">Projects</a>
+    <a href="#">About</a>
+  </nav>
+
+  <div id="homeView" class="home-view">
+    <div id="postList"></div>
+  </div>
+
+  <div id="articleView" class="article">
+    <button class="back-btn" id="backBtn">← Back to all posts</button>
+    <p class="tag" id="articleTag"></p>
+    <h2 id="articleTitle"></h2>
+    <p class="meta-row" id="articleMeta"></p>
+    <div class="article-body" id="articleBody"></div>
+  </div>
+
+  <footer>The Field Notes — written and built by hand.</footer>
+</div>
+
+<script>
+(function(){
+  const posts = [
+    {
+      tag: 'Essay',
+      title: 'The best code is the code you delete',
+      date: 'Jul 18, 2026',
+      readTime: '6 min read',
+      excerpt: 'Every line you write is a line someone has to read, maintain, and eventually question. A case for subtraction as a design skill.',
+      body: [
+        "Every line you write is a line someone has to read, maintain, and eventually question. We treat addition as the default mode of progress — a new feature, a new abstraction, a new config flag for the one person who asked for it. Subtraction rarely gets the same credit, even though it's often the harder, more valuable move.",
+        "The best refactors I've done weren't clever. They were deletions. A feature flag that outlived its experiment. A caching layer solving a problem that no longer existed. An abstraction built for a future that never arrived. Removing them didn't just shrink the codebase — it removed a category of questions a future reader would otherwise have to answer.",
+        "Next time you're about to add something, ask what you could remove instead. The answer is sometimes nothing. But asking the question is what keeps a codebase honest."
+      ]
+    },
+    {
+      tag: 'Guide',
+      title: 'A field guide to naming things well',
+      date: 'Jul 10, 2026',
+      readTime: '5 min read',
+      excerpt: 'Naming is not decoration. It is the interface between your code and the next person who has to trust it.',
+      body: [
+        "Naming is not decoration. It is the interface between your code and the next person who has to trust it — and that person is often you, six months from now, with no memory of the context you're relying on today.",
+        "A good name answers a question before it's asked. `isLoading` tells a reviewer what state to expect without opening the function. `userCountLastSync` tells them what's stale and what isn't. Vague names — `data`, `temp`, `handleClick2` — defer that question to runtime, where it's far more expensive to answer.",
+        "Spend the extra thirty seconds. Naming well is one of the few places where a small, cheap decision compounds into a large, expensive one if you get it wrong."
+      ]
+    },
+    {
+      tag: 'Notes',
+      title: 'Shipping small, on purpose',
+      date: 'Jun 29, 2026',
+      readTime: '4 min read',
+      excerpt: 'Small releases are not a compromise. They are how you keep feedback loops short enough to still be useful.',
+      body: [
+        "Small releases are not a compromise on ambition. They are how you keep feedback loops short enough to still be useful. A change that ships in a day gets real feedback in a day. A change that ships in a quarter gets feedback on decisions you can no longer easily undo.",
+        "The discipline isn't in the size of the idea — it's in the size of the step. Break the idea into the smallest piece that teaches you something true about whether it works, and ship that first."
+      ]
+    },
+    {
+      tag: 'Essay',
+      title: 'On writing documentation nobody reads',
+      date: 'Jun 15, 2026',
+      readTime: '5 min read',
+      excerpt: 'Most documentation fails silently — not because it is wrong, but because it answers a question nobody was asking.',
+      body: [
+        "Most documentation fails silently — not because it is wrong, but because it answers a question nobody was asking, in a place nobody thought to look. The fix usually isn't more documentation. It's better placement.",
+        "Write the answer where the question happens: in the error message, in the empty state, in the code comment right above the confusing line. Documentation that has to be found is documentation that, most of the time, won't be."
+      ]
+    }
+  ];
+
+  const postListEl = document.getElementById('postList');
+  const homeView = document.getElementById('homeView');
+  const articleView = document.getElementById('articleView');
+
+  function renderHome(){
+    postListEl.innerHTML = '';
+
+    // featured = first post
+    const featured = posts[0];
+    const fWrap = document.createElement('div');
+    fWrap.className = 'featured';
+    fWrap.innerHTML = `
+      <span class="tag">${featured.tag}</span>
+      <h2>${featured.title}</h2>
+      <p class="excerpt dropcap">${featured.excerpt}</p>
+      <p class="meta-row">${featured.date} · ${featured.readTime}</p>
+    `;
+    fWrap.addEventListener('click', () => openArticle(0));
+    postListEl.appendChild(fWrap);
+
+    const heading = document.createElement('p');
+    heading.className = 'grid-heading';
+    heading.textContent = 'More posts';
+    postListEl.appendChild(heading);
+
+    posts.slice(1).forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'post-row';
+      row.innerHTML = `
+        <div class="post-main">
+          <h3>${p.title}</h3>
+          <p class="excerpt">${p.excerpt}</p>
+        </div>
+        <span class="post-date">${p.date}</span>
+      `;
+      row.addEventListener('click', () => openArticle(i + 1));
+      postListEl.appendChild(row);
+    });
+  }
+
+  function openArticle(index){
+    const p = posts[index];
+    document.getElementById('articleTag').textContent = p.tag;
+    document.getElementById('articleTitle').textContent = p.title;
+    document.getElementById('articleMeta').textContent = p.date + ' · ' + p.readTime;
+    document.getElementById('articleBody').innerHTML = p.body.map(par => `<p>${par}</p>`).join('');
+
+    homeView.classList.add('hidden');
+    articleView.classList.add('open');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function closeArticle(){
+    articleView.classList.remove('open');
+    homeView.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById('backBtn').addEventListener('click', closeArticle);
+
+  renderHome();
+})();
+</script>
+</body>
+</html>

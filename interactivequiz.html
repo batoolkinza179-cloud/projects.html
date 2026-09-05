@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #1C1F26;
+    --field: #20232B;
+    --amber: #E8A94B;
+    --teal: #5FBFA6;
+    --coral: #E1605A;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+    --rule: #2A2E37;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .card{
+    width:100%; max-width: 480px;
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 32px 30px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+
+  /* ---- progress ---- */
+  .top-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom: 18px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+  }
+  .progress-track{
+    height: 5px;
+    background: var(--field);
+    border-radius: 4px;
+    overflow:hidden;
+    margin-bottom: 26px;
+  }
+  .progress-fill{
+    height:100%;
+    background: var(--amber);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* ---- question ---- */
+  .category{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+    background: rgba(232,169,75,0.12);
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .question-text{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.4;
+    margin-bottom: 24px;
+  }
+
+  .options{ display:flex; flex-direction:column; gap: 10px; margin-bottom: 22px; }
+  .option{
+    text-align:left;
+    background: var(--field);
+    border: 1.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-size: 14.5px;
+    cursor:pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    display:flex; align-items:center; gap: 10px;
+  }
+  .option:hover:not(.locked){ border-color: var(--amber); }
+  .option .letter{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+    width: 20px; flex-shrink:0;
+  }
+  .option.correct{ border-color: var(--teal); background: rgba(95,191,166,0.12); }
+  .option.correct .letter{ color: var(--teal); }
+  .option.wrong{ border-color: var(--coral); background: rgba(225,96,90,0.1); }
+  .option.wrong .letter{ color: var(--coral); }
+
+  .next-btn{
+    width:100%;
+    background: var(--amber);
+    color: #14161A;
+    border:none;
+    border-radius: 10px;
+    padding: 13px 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor:pointer;
+    display:none;
+    transition: filter 0.15s ease;
+  }
+  .next-btn:hover{ filter: brightness(1.08); }
+  .next-btn.show{ display:block; }
+
+  /* ---- results ---- */
+  .results{ display:none; text-align:center; }
+  .results.show{ display:block; }
+  .score-ring-wrap{ position:relative; width:150px; height:150px; margin: 0 auto 20px; }
+  svg{ transform: rotate(-90deg); }
+  .ring-bg{ fill:none; stroke: var(--field); stroke-width:10; }
+  .ring-fg{ fill:none; stroke: var(--amber); stroke-width:10; stroke-linecap:round; transition: stroke-dashoffset 0.6s ease; }
+  .score-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .score-num{ font-family:'Fraunces', serif; font-weight:700; font-size:32px; }
+  .score-label{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--dim); }
+  .results h2{ font-family:'Fraunces', serif; font-size:22px; margin-bottom:8px; }
+  .results p{ color: var(--dim); font-size: 14px; margin-bottom: 22px; }
+  .retry-btn{
+    background: none; border: 1px solid var(--rule); color: var(--text);
+    padding: 12px 24px; border-radius: 100px; font-size: 13.5px; cursor:pointer;
+  }
+  .retry-btn:hover{ border-color: var(--amber); color: var(--amber); }
+
+  .quiz-view.hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="quiz-view" id="quizView">
+    <div class="top-row">
+      <span id="qCounter">Question 1 of 5</span>
+      <span id="scoreCounter">Score: 0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <span class="category" id="category"></span>
+    <p class="question-text" id="questionText"></p>
+    <div class="options" id="optionsWrap"></div>
+    <button class="next-btn" id="nextBtn">Next question</button>
+  </div>
+
+  <div class="results" id="resultsView">
+    <div class="score-ring-wrap">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle class="ring-bg" cx="75" cy="75" r="65"></circle>
+        <circle class="ring-fg" id="resultRing" cx="75" cy="75" r="65" stroke-dasharray="408.4" stroke-dashoffset="408.4"></circle>
+      </svg>
+      <div class="score-center">
+        <div class="score-num" id="resultScore">0/0</div>
+        <div class="score-label">SCORE</div>
+      </div>
+    </div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultText"></p>
+    <button class="retry-btn" id="retryBtn">Try again</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const questions = [
+    {
+      category: 'Web Basics',
+      q: 'What does HTML stand for?',
+      options: ['Hyper Trainer Marking Language', 'HyperText Markup Language', 'Home Tool Markup Language', 'Hyperlinks Text Marking Language'],
+      correct: 1
+    },
+    {
+      category: 'CSS',
+      q: 'Which property changes text color in CSS?',
+      options: ['text-style', 'font-color', 'color', 'text-color'],
+      correct: 2
+    },
+    {
+      category: 'JavaScript',
+      q: 'Which keyword declares a variable that cannot be reassigned?',
+      options: ['var', 'let', 'const', 'static'],
+      correct: 2
+    },
+    {
+      category: 'Web Basics',
+      q: 'What does CSS stand for?',
+      options: ['Cascading Style Sheets', 'Computer Style Sheets', 'Creative Style System', 'Colorful Style Sheets'],
+      correct: 0
+    },
+    {
+      category: 'JavaScript',
+      q: 'Which method adds an item to the end of an array?',
+      options: ['array.append()', 'array.push()', 'array.add()', 'array.insert()'],
+      correct: 1
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  let answered = false;
+
+  const qCounter = document.getElementById('qCounter');
+  const scoreCounter = document.getElementById('scoreCounter');
+  const progressFill = document.getElementById('progressFill');
+  const categoryEl = document.getElementById('category');
+  const questionText = document.getElementById('questionText');
+  const optionsWrap = document.getElementById('optionsWrap');
+  const nextBtn = document.getElementById('nextBtn');
+  const quizView = document.getElementById('quizView');
+  const resultsView = document.getElementById('resultsView');
+
+  const letters = ['A','B','C','D','E','F'];
+
+  function renderQuestion(){
+    answered = false;
+    const q = questions[current];
+    qCounter.textContent = 'Question ' + (current + 1) + ' of ' + questions.length;
+    scoreCounter.textContent = 'Score: ' + score;
+    progressFill.style.width = ((current) / questions.length * 100) + '%';
+    categoryEl.textContent = q.category;
+    questionText.textContent = q.q;
+
+    optionsWrap.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.innerHTML = `<span class="letter">${letters[i]}</span><span>${opt}</span>`;
+      btn.addEventListener('click', () => selectOption(i, btn));
+      optionsWrap.appendChild(btn);
+    });
+
+    nextBtn.classList.remove('show');
+  }
+
+  function selectOption(i, btn){
+    if (answered) return;
+    answered = true;
+    const q = questions[current];
+    const allOptions = [...optionsWrap.children];
+
+    allOptions.forEach(o => o.classList.add('locked'));
+
+    if (i === q.correct){
+      btn.classList.add('correct');
+      score++;
+    } else {
+      btn.classList.add('wrong');
+      allOptions[q.correct].classList.add('correct');
+    }
+    scoreCounter.textContent = 'Score: ' + score;
+    nextBtn.classList.add('show');
+  }
+
+  function nextQuestion(){
+    current++;
+    if (current >= questions.length){
+      showResults();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  function showResults(){
+    progressFill.style.width = '100%';
+    quizView.classList.add('hidden');
+    resultsView.classList.add('show');
+
+    const pct = score / questions.length;
+    const circ = 408.4;
+    document.getElementById('resultRing').style.strokeDashoffset = (circ * (1 - pct)).toFixed(1);
+    document.getElementById('resultScore').textContent = score + '/' + questions.length;
+
+    let title, text;
+    if (pct === 1){ title = 'Perfect score!'; text = "You didn't miss a single one."; }
+    else if (pct >= 0.6){ title = 'Nice work'; text = 'Solid grasp of the basics.'; }
+    else { title = 'Keep practicing'; text = 'Review the topics and try again.'; }
+
+    document.getElementById('resultTitle').textContent = title;
+    document.getElementById('resultText').textContent = text;
+  }
+
+  function restart(){
+    current = 0; score = 0;
+    resultsView.classList.remove('show');
+    quizView.classList.remove('hidden');
+    renderQuestion();
+  }
+
+  nextBtn.addEventListener('click', nextQuestion);
+  document.getElementById('retryBtn').addEventListener('click', restart);
+
+  renderQuestion();
+})();
+</script>
+</body>
+</html>

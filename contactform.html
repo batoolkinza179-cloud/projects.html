@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F3F0E6;
+    --card: #FFFFFF;
+    --ink: #23241F;
+    --ink-soft: #6B6A5F;
+    --rule: rgba(35,36,31,0.16);
+    --forest: #3C5A45;
+    --forest-soft: #E1E9DF;
+    --coral: #C2503E;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 32px 16px;
+  }
+  .card{
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 40px 36px;
+    box-shadow: 0 24px 60px rgba(35,36,31,0.1);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--forest);
+    margin-bottom: 8px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: 30px;
+    margin-bottom: 8px;
+  }
+  .lede{ color: var(--ink-soft); font-size: 14.5px; margin-bottom: 28px; }
+
+  .field{ margin-bottom: 20px; position: relative; }
+  .field label{
+    display:block;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 7px;
+    color: var(--ink);
+  }
+  .field input, .field textarea{
+    width: 100%;
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family:'Inter', sans-serif;
+    font-size: 14.5px;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .field textarea{ min-height: 110px; resize: vertical; line-height:1.5; }
+  .field input:focus, .field textarea:focus{ border-color: var(--forest); }
+  .field.error input, .field.error textarea{ border-color: var(--coral); }
+  .error-msg{
+    display:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--coral);
+    margin-top: 6px;
+  }
+  .field.error .error-msg{ display:block; }
+
+  .char-count{
+    position:absolute; right: 4px; bottom: -18px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+  }
+
+  .submit-btn{
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 10px;
+    padding: 14px 0;
+    font-family:'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s ease, transform 0.08s ease;
+  }
+  .submit-btn:hover{ background: var(--forest); }
+  .submit-btn:active{ transform: scale(0.98); }
+  .submit-btn:disabled{ opacity: 0.6; cursor: default; }
+
+  .success{
+    display:none;
+    text-align:center;
+    padding: 20px 0 4px;
+  }
+  .success.show{ display:block; }
+  .success .check{
+    width: 52px; height:52px;
+    border-radius:50%;
+    background: var(--forest-soft);
+    color: var(--forest);
+    display:flex; align-items:center; justify-content:center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+  }
+  .success h2{
+    font-family:'Fraunces', serif;
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+  .success p{ color: var(--ink-soft); font-size: 14px; margin-bottom: 20px; }
+  .success button{
+    background:none;
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    cursor:pointer;
+  }
+  .success button:hover{ border-color: var(--forest); color: var(--forest); }
+
+  .form-wrap.hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="form-wrap" id="formWrap">
+    <p class="eyebrow">Get in touch</p>
+    <h1>Send a message</h1>
+    <p class="lede">Fill this in and I'll get back to you within a couple of days.</p>
+
+    <form id="contactForm" novalidate>
+      <div class="field" id="nameField">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" placeholder="Your full name">
+        <p class="error-msg">Please enter your name.</p>
+      </div>
+
+      <div class="field" id="emailField">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com">
+        <p class="error-msg">Please enter a valid email address.</p>
+      </div>
+
+      <div class="field" id="subjectField">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" placeholder="What's this about?">
+        <p class="error-msg">Please add a subject.</p>
+      </div>
+
+      <div class="field" id="messageField">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" maxlength="500" placeholder="Write your message…"></textarea>
+        <span class="char-count" id="charCount">0 / 500</span>
+        <p class="error-msg">Message needs at least 10 characters.</p>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Send message</button>
+    </form>
+  </div>
+
+  <div class="success" id="successView">
+    <div class="check">✓</div>
+    <h2>Message sent</h2>
+    <p>Thanks for reaching out — I'll reply as soon as I can.</p>
+    <button id="resetBtn">Send another</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById('contactForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const formWrap = document.getElementById('formWrap');
+  const successView = document.getElementById('successView');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const nameInput = document.getElementById('name');
+  const emailInput = document.getElementById('email');
+  const subjectInput = document.getElementById('subject');
+  const messageInput = document.getElementById('message');
+  const charCount = document.getElementById('charCount');
+
+  messageInput.addEventListener('input', () => {
+    charCount.textContent = messageInput.value.length + ' / 500';
+  });
+
+  function setError(fieldId, isError){
+    document.getElementById(fieldId).classList.toggle('error', isError);
+  }
+
+  function isValidEmail(v){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  function validate(){
+    let valid = true;
+
+    if (!nameInput.value.trim()){ setError('nameField', true); valid = false; }
+    else setError('nameField', false);
+
+    if (!isValidEmail(emailInput.value.trim())){ setError('emailField', true); valid = false; }
+    else setError('emailField', false);
+
+    if (!subjectInput.value.trim()){ setError('subjectField', true); valid = false; }
+    else setError('subjectField', false);
+
+    if (messageInput.value.trim().length < 10){ setError('messageField', true); valid = false; }
+    else setError('messageField', false);
+
+    return valid;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    // Simulated send — replace with a real fetch() to your backend or form service.
+    setTimeout(() => {
+      formWrap.classList.add('hidden');
+      successView.classList.add('show');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send message';
+    }, 700);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    form.reset();
+    charCount.textContent = '0 / 500';
+    ['nameField','emailField','subjectField','messageField'].forEach(id => setError(id, false));
+    successView.classList.remove('show');
+    formWrap.classList.remove('hidden');
+  });
+})();
+</script>
+</body>
+</html>

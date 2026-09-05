@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Harbor Watch — Coastal Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Karla:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0d2436;
+    --navy-2:#123049;
+    --chart:#ede4ce;
+    --brass:#b8873c;
+    --brass-bright:#d9a95c;
+    --foam:#4a7a7a;
+    --alert:#a13d3d;
+    --line: rgba(237,228,206,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--navy);color:var(--chart);font-family:'Karla',sans-serif;}
+  #page{max-width:1100px; margin:0 auto; padding:26px 20px 70px 20px;}
+
+  /* ---- Header ---- */
+  #header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; flex-wrap:wrap; gap:16px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--brass-bright); margin-bottom:6px; display:flex; align-items:center; gap:8px;}
+  h1{font-family:'Playfair Display',serif; font-weight:700; font-size:30px; margin:0; color:var(--chart);}
+  #station-sub{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:rgba(237,228,206,0.5); margin-top:4px;}
+
+  #now-box{text-align:right;}
+  #now-temp{font-family:'Playfair Display',serif; font-weight:700; font-size:52px; line-height:1;}
+  #now-cond{font-size:13.5px; color:rgba(237,228,206,0.65); margin-top:2px;}
+
+  #alert-banner{
+    background:rgba(161,61,61,0.18); border:1px solid rgba(161,61,61,0.5); border-radius:8px; padding:12px 16px;
+    margin-bottom:20px; font-size:13.5px; display:flex; align-items:center; gap:10px;
+  }
+  #alert-banner b{color:#e08a8a;}
+
+  /* ---- Grid ---- */
+  #grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .card{
+    background:var(--navy-2); border-radius:12px; padding:20px; border:1px solid var(--line);
+  }
+  .card-title{
+    font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--brass-bright); margin-bottom:14px;
+  }
+
+  /* ---- Wind compass ---- */
+  #wind-card{display:flex; align-items:center; gap:22px;}
+  #compass-wrap{width:150px; height:150px; flex-shrink:0; position:relative;}
+  #wind-stats{flex:1;}
+  .wind-stat-row{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:13px;}
+  .wind-stat-row .label{color:rgba(237,228,206,0.55);}
+  .wind-stat-row .val{font-family:'JetBrains Mono',monospace; font-weight:700;}
+
+  /* ---- Barometer gauge ---- */
+  #baro-card{display:flex; flex-direction:column; align-items:center;}
+  #baro-reading{font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; margin-top:6px;}
+  #baro-trend{font-size:12px; color:rgba(237,228,206,0.55); margin-top:2px;}
+
+  /* ---- Tide chart ---- */
+  #tide-card{grid-column:1/-1;}
+  #tide-svg{width:100%; height:140px;}
+  #tide-times{display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(237,228,206,0.45); margin-top:4px;}
+  .tide-marker-label{font-family:'JetBrains Mono',monospace; font-size:10px; fill:var(--brass-bright);}
+
+  /* ---- Forecast strip ---- */
+  #forecast-card{grid-column:1/-1;}
+  #forecast-strip{display:grid; grid-template-columns:repeat(5,1fr); gap:10px;}
+  .fc-day{background:rgba(237,228,206,0.04); border-radius:8px; padding:14px 8px; text-align:center;}
+  .fc-day-name{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; color:var(--brass-bright); margin-bottom:8px;}
+  .fc-icon{font-size:22px; margin-bottom:6px;}
+  .fc-hi{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;}
+  .fc-lo{font-family:'JetBrains Mono',monospace; font-size:12px; color:rgba(237,228,206,0.5);}
+  .fc-swell{font-size:10.5px; color:rgba(237,228,206,0.45); margin-top:6px;}
+
+  @media(max-width:760px){
+    #grid{grid-template-columns:1fr;}
+    #forecast-strip{grid-template-columns:repeat(3,1fr);}
+    #header{flex-direction:column;}
+    #now-box{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div id="page">
+  <div id="header">
+    <div>
+      <div class="eyebrow">Harbor Watch · Station 46026</div>
+      <h1>Half Moon Bay</h1>
+      <div id="station-sub">37.4636°N, 122.4286°W · Updated 6 minutes ago</div>
+    </div>
+    <div id="now-box">
+      <div id="now-temp">58°F</div>
+      <div id="now-cond">Overcast, light fog offshore</div>
+    </div>
+  </div>
+
+  <div id="alert-banner">⚠️ <span><b>Small Craft Advisory</b> in effect until 6:00 PM — northwest winds 20 to 25 kt, seas 8 to 10 ft.</span></div>
+
+  <div id="grid">
+    <div class="card" id="wind-card">
+      <div style="flex:1">
+        <div class="card-title">Wind</div>
+        <div id="compass-wrap">
+          <svg viewBox="0 0 150 150" width="150" height="150">
+            <circle cx="75" cy="75" r="68" fill="none" stroke="rgba(237,228,206,0.15)" stroke-width="1.5"/>
+            <circle cx="75" cy="75" r="50" fill="none" stroke="rgba(237,228,206,0.08)" stroke-width="1"/>
+            <text x="75" y="16" text-anchor="middle" fill="#d9a95c" font-family="JetBrains Mono" font-size="12" font-weight="700">N</text>
+            <text x="140" y="79" text-anchor="middle" fill="rgba(237,228,206,0.5)" font-family="JetBrains Mono" font-size="11">E</text>
+            <text x="75" y="140" text-anchor="middle" fill="rgba(237,228,206,0.5)" font-family="JetBrains Mono" font-size="11">S</text>
+            <text x="10" y="79" text-anchor="middle" fill="rgba(237,228,206,0.5)" font-family="JetBrains Mono" font-size="11">W</text>
+            <g id="wind-needle" transform="rotate(312 75 75)">
+              <line x1="75" y1="75" x2="75" y2="20" stroke="#a13d3d" stroke-width="3" stroke-linecap="round"/>
+              <line x1="75" y1="75" x2="75" y2="112" stroke="#d9a95c" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <circle cx="75" cy="75" r="5" fill="#ede4ce"/>
+          </svg>
+        </div>
+      </div>
+      <div id="wind-stats">
+        <div class="wind-stat-row"><span class="label">Direction</span><span class="val">NW (312°)</span></div>
+        <div class="wind-stat-row"><span class="label">Sustained</span><span class="val">22 kt</span></div>
+        <div class="wind-stat-row"><span class="label">Gusting</span><span class="val">31 kt</span></div>
+        <div class="wind-stat-row"><span class="label">Swell</span><span class="val">9 ft @ 12s</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="baro-card">
+      <div class="card-title" style="align-self:flex-start">Barometric Pressure</div>
+      <svg viewBox="0 0 220 130" width="220" height="130">
+        <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="rgba(237,228,206,0.12)" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#b8873c" stroke-width="14" stroke-linecap="round"
+          stroke-dasharray="283" stroke-dashoffset="99" id="baro-arc"/>
+        <line x1="110" y1="110" x2="110" y2="35" stroke="#ede4ce" stroke-width="2.5" id="baro-needle" transform="rotate(-28 110 110)"/>
+        <circle cx="110" cy="110" r="5" fill="#d9a95c"/>
+      </svg>
+      <div id="baro-reading">29.71 inHg</div>
+      <div id="baro-trend">↓ Falling — 0.08 in past 3 hrs</div>
+    </div>
+
+    <div class="card" id="tide-card">
+      <div class="card-title">Tide — Today</div>
+      <svg id="tide-svg" viewBox="0 0 900 140" preserveAspectRatio="none">
+        <path d="M 0,90 C 100,20 200,20 300,90 C 400,160 500,160 600,90 C 700,20 800,20 900,90"
+          fill="none" stroke="#4a7a7a" stroke-width="3"/>
+        <circle cx="150" cy="55" r="4" fill="#d9a95c"/>
+        <text x="150" y="38" text-anchor="middle" class="tide-marker-label">High 5.8ft</text>
+        <circle cx="450" cy="125" r="4" fill="#d9a95c"/>
+        <text x="450" y="140" text-anchor="middle" class="tide-marker-label">Low 1.2ft</text>
+        <circle cx="750" cy="55" r="4" fill="#d9a95c"/>
+        <text x="750" y="38" text-anchor="middle" class="tide-marker-label">High 6.1ft</text>
+        <line x1="270" y1="0" x2="270" y2="140" stroke="rgba(237,228,206,0.25)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="270" y="14" text-anchor="middle" class="tide-marker-label" fill="#ede4ce">now</text>
+      </svg>
+      <div id="tide-times"><span>12:00 AM</span><span>6:00 AM</span><span>12:00 PM</span><span>6:00 PM</span><span>12:00 AM</span></div>
+    </div>
+
+    <div class="card" id="forecast-card">
+      <div class="card-title">5-Day Outlook</div>
+      <div id="forecast-strip"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FORECAST = [
+  { day:'Thu', icon:'🌫️', hi:59, lo:51, swell:'9ft NW' },
+  { day:'Fri', icon:'🌧️', hi:56, lo:50, swell:'11ft NW' },
+  { day:'Sat', icon:'⛅', hi:61, lo:52, swell:'7ft W' },
+  { day:'Sun', icon:'☀️', hi:64, lo:53, swell:'5ft W' },
+  { day:'Mon', icon:'🌫️', hi:60, lo:52, swell:'6ft NW' }
+];
+
+const strip = document.getElementById('forecast-strip');
+FORECAST.forEach(f=>{
+  const el = document.createElement('div');
+  el.className='fc-day';
+  el.innerHTML = `
+    <div class="fc-day-name">${f.day}</div>
+    <div class="fc-icon">${f.icon}</div>
+    <div class="fc-hi">${f.hi}°</div>
+    <div class="fc-lo">${f.lo}°</div>
+    <div class="fc-swell">${f.swell}</div>
+  `;
+  strip.appendChild(el);
+});
+</script>
+</body>
+</html>

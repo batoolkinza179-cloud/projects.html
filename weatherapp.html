@@ -1,0 +1,482 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skylog — a weather logbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EFE8D8;
+    --paper-2: #E6DEC9;
+    --ink: #1B2A41;
+    --ink-soft: #4A5A6A;
+    --brass: #B8863B;
+    --rule: rgba(27,42,65,0.18);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+ 
+  /* ---- Sky canvas hero ---- */
+  .sky-hero{
+    position: relative;
+    margin: 0 -20px;
+    height: 280px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--rule);
+  }
+  #sky{ display:block; width:100%; height:100%; }
+  .sky-overlay{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    padding: 20px 24px;
+    color: #FBF7EC;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin: 0 0 6px;
+  }
+  .place-name{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 34px;
+    margin: 0;
+    line-height: 1.05;
+  }
+  .temp-row{
+    display:flex; align-items:baseline; gap:14px; margin-top:8px;
+  }
+  .temp-big{
+    font-family:'Fraunces', serif;
+    font-weight: 400;
+    font-optical-sizing: auto;
+    font-size: 64px;
+    line-height: 1;
+  }
+  .cond-text{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+ 
+  /* ---- Search / logbook header ---- */
+  .searchbar{
+    display:flex; gap:8px;
+    margin-top: 22px;
+  }
+  .searchbar input{
+    flex:1;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 15px;
+    padding: 8px 2px;
+    color: var(--ink);
+    outline: none;
+  }
+  .searchbar input::placeholder{ color: var(--ink-soft); }
+  .searchbar button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 0 18px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .searchbar button:hover{ background: var(--brass); }
+  .searchbar button:focus-visible, .locbtn:focus-visible, .day:focus-visible{
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+  .locbtn{
+    background:none; border:1px solid var(--ink); color: var(--ink);
+    font-family:'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 8px 12px; cursor:pointer; margin-top: 10px;
+  }
+  .locbtn:hover{ border-color: var(--brass); color: var(--brass); }
+ 
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+    min-height: 16px;
+  }
+ 
+  /* ---- Gauge row ---- */
+  .gauges{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    margin-top: 30px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .gauge{
+    background: var(--paper);
+    padding: 16px 14px;
+    text-align:center;
+  }
+  .gauge-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+  .gauge-value{
+    font-family:'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .gauge-unit{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+ 
+  /* ---- Forecast log ---- */
+  .log-heading{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 34px 0 8px;
+  }
+  .day{
+    display:grid;
+    grid-template-columns: 28px 100px 1fr auto auto;
+    align-items:center;
+    gap: 14px;
+    padding: 13px 4px;
+    border-bottom: 1px solid var(--rule);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+  .day-num{ color: var(--brass); font-weight:600; }
+  .day-name{ font-weight:500; }
+  .day-cond{ color: var(--ink-soft); font-size:12px; }
+  .day-hi{ font-weight:600; }
+  .day-lo{ color: var(--ink-soft); }
+ 
+  footer{
+    margin-top: 40px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align:center;
+  }
+ 
+  @media (max-width: 420px){
+    .temp-big{ font-size: 52px; }
+    .place-name{ font-size: 26px; }
+    .day{ grid-template-columns: 22px 76px 1fr auto auto; gap:8px; font-size:12px;}
+  }
+ 
+  @media (prefers-reduced-motion: reduce){
+    #sky{ animation: none !important; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="sky-hero">
+  <canvas id="sky"></canvas>
+  <div class="sky-overlay">
+    <p class="eyebrow" id="dateLine">—</p>
+    <h1 class="place-name" id="placeName">Skylog</h1>
+    <div class="temp-row">
+      <span class="temp-big" id="tempBig">--°</span>
+      <span class="cond-text" id="condText">Search a place to begin the log</span>
+    </div>
+  </div>
+</div>
+ 
+<div class="wrap">
+ 
+  <div class="searchbar">
+    <input id="cityInput" type="text" placeholder="Enter a city…" autocomplete="off">
+    <button id="searchBtn">Log it</button>
+  </div>
+  <button class="locbtn" id="locBtn">▸ use my location</button>
+  <p class="status-line" id="statusLine"></p>
+ 
+  <div class="gauges">
+    <div class="gauge">
+      <p class="gauge-label">Feels like</p>
+      <p class="gauge-value" id="feelsVal">--<span class="gauge-unit">°</span></p>
+    </div>
+    <div class="gauge">
+      <p class="gauge-label">Humidity</p>
+      <p class="gauge-value" id="humVal">--<span class="gauge-unit">%</span></p>
+    </div>
+    <div class="gauge">
+      <p class="gauge-label">Wind</p>
+      <p class="gauge-value" id="windVal">--<span class="gauge-unit"> km/h</span></p>
+    </div>
+  </div>
+ 
+  <p class="log-heading">7-day log</p>
+  <div id="forecastList"></div>
+ 
+  <footer>Data via Open-Meteo · no key, no tracking</footer>
+</div>
+ 
+<script>
+(function(){
+  const sky = document.getElementById('sky');
+  const ctx = sky.getContext('2d');
+  let W, H, dpr = Math.min(window.devicePixelRatio || 1, 2);
+ 
+  function resize(){
+    W = sky.clientWidth; H = sky.clientHeight;
+    sky.width = W * dpr; sky.height = H * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+ 
+  // sky state, updated once real data arrives
+  let skyState = { isDay: true, code: 0 };
+ 
+  // drifting shapes (clouds by day, stars by night)
+  const shapes = Array.from({length: 7}, (_,i) => ({
+    x: Math.random(), y: 0.15 + Math.random()*0.55,
+    r: 18 + Math.random()*26, speed: 0.00006 + Math.random()*0.00006,
+    tw: Math.random()*Math.PI*2
+  }));
+ 
+  function paletteFor(code, isDay){
+    // simple weather-code -> gradient palette
+    const clear = isDay ? ['#8FC1E3','#D9E8EE'] : ['#0B1B33','#1B2A41'];
+    const cloudy = isDay ? ['#9AA6AE','#D7D3C6'] : ['#232C36','#3A4552'];
+    const rain = isDay ? ['#5D6B76','#8B96A0'] : ['#12181F','#232C36'];
+    const storm = isDay ? ['#3E4750','#6D7680'] : ['#0A0C10','#1A1F26'];
+    if (code === 0 || code === 1) return clear;
+    if (code >= 2 && code <= 48) return cloudy;
+    if (code >= 51 && code <= 67) return rain;
+    if (code >= 71 && code <= 86) return cloudy;
+    if (code >= 95) return storm;
+    return clear;
+  }
+ 
+  let t = 0;
+  function draw(){
+    t += 1;
+    const [top, bottom] = paletteFor(skyState.code, skyState.isDay);
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+ 
+    if (skyState.isDay){
+      // sun
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(255,244,214,0.9)';
+      ctx.arc(W*0.82, H*0.28, 26, 0, Math.PI*2);
+      ctx.fill();
+      // clouds
+      shapes.forEach(s=>{
+        s.x += s.speed;
+        if (s.x > 1.2) s.x = -0.2;
+        const px = s.x*W, py = s.y*H;
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.ellipse(px, py, s.r, s.r*0.55, 0, 0, Math.PI*2);
+        ctx.ellipse(px+s.r*0.6, py+4, s.r*0.7, s.r*0.42, 0, 0, Math.PI*2);
+        ctx.fill();
+      });
+    } else {
+      // stars, twinkling
+      shapes.forEach(s=>{
+        s.tw += 0.02;
+        const px = s.x*W*1.4 % W, py = s.y*H*0.9;
+        const alpha = 0.4 + 0.4*Math.sin(s.tw + s.x*10);
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(255,255,255,'+alpha.toFixed(2)+')';
+        ctx.arc(px, py, 1.6, 0, Math.PI*2);
+        ctx.fill();
+      });
+      // moon
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(240,240,230,0.9)';
+      ctx.arc(W*0.82, H*0.26, 20, 0, Math.PI*2);
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+ 
+  // ---------------- weather logic ----------------
+  const codeMap = {
+    0:'Clear sky', 1:'Mostly clear', 2:'Partly cloudy', 3:'Overcast',
+    45:'Fog', 48:'Rime fog',
+    51:'Light drizzle', 53:'Drizzle', 55:'Dense drizzle',
+    61:'Light rain', 63:'Rain', 65:'Heavy rain',
+    71:'Light snow', 73:'Snow', 75:'Heavy snow', 77:'Snow grains',
+    80:'Light showers', 81:'Showers', 82:'Violent showers',
+    95:'Thunderstorm', 96:'Thunderstorm w/ hail', 99:'Severe thunderstorm'
+  };
+ 
+  const els = {
+    place: document.getElementById('placeName'),
+    date: document.getElementById('dateLine'),
+    temp: document.getElementById('tempBig'),
+    cond: document.getElementById('condText'),
+    status: document.getElementById('statusLine'),
+    feels: document.getElementById('feelsVal'),
+    hum: document.getElementById('humVal'),
+    wind: document.getElementById('windVal'),
+    forecast: document.getElementById('forecastList'),
+    input: document.getElementById('cityInput'),
+    searchBtn: document.getElementById('searchBtn'),
+    locBtn: document.getElementById('locBtn'),
+  };
+ 
+  function setStatus(msg){ els.status.textContent = msg; }
+ 
+  async function geocode(name){
+    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(name) + '&count=1&language=en&format=json';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Geocoding failed');
+    const data = await res.json();
+    if (!data.results || !data.results.length) throw new Error('Place not found');
+    const r = data.results[0];
+    return { lat: r.latitude, lon: r.longitude, name: r.name, admin: r.admin1, country: r.country_code };
+  }
+ 
+  async function reverseGeocode(lat, lon){
+    try{
+      const url = 'https://geocoding-api.open-meteo.com/v1/search?name=&count=1';
+      // open-meteo geocoding has no reverse endpoint; fall back to coordinates label
+      return { name: 'Your location', admin:'', country:'' };
+    } catch(e){
+      return { name:'Your location', admin:'', country:'' };
+    }
+  }
+ 
+  async function fetchWeather(lat, lon){
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+      '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min' +
+      '&timezone=auto';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Forecast failed');
+    return res.json();
+  }
+ 
+  function renderForecast(daily){
+    els.forecast.innerHTML = '';
+    const names = daily.time.map(d => {
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString(undefined, { weekday: 'short' });
+    });
+    daily.time.forEach((d, i) => {
+      const row = document.createElement('div');
+      row.className = 'day';
+      row.innerHTML = `
+        <span class="day-num">${String(i+1).padStart(2,'0')}</span>
+        <span class="day-name">${names[i]}</span>
+        <span class="day-cond">${codeMap[daily.weather_code[i]] || '—'}</span>
+        <span class="day-hi">${Math.round(daily.temperature_2m_max[i])}°</span>
+        <span class="day-lo">${Math.round(daily.temperature_2m_min[i])}°</span>
+      `;
+      els.forecast.appendChild(row);
+    });
+  }
+ 
+  function renderCurrent(place, current){
+    const label = [place.name, place.admin].filter(Boolean).join(', ');
+    els.place.textContent = label || place.name;
+    els.date.textContent = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+    els.temp.textContent = Math.round(current.temperature_2m) + '°';
+    els.cond.textContent = codeMap[current.weather_code] || 'Unknown';
+    els.feels.innerHTML = Math.round(current.apparent_temperature) + '<span class="gauge-unit">°</span>';
+    els.hum.innerHTML = Math.round(current.relative_humidity_2m) + '<span class="gauge-unit">%</span>';
+    els.wind.innerHTML = Math.round(current.wind_speed_10m) + '<span class="gauge-unit"> km/h</span>';
+ 
+    skyState.isDay = current.is_day === 1;
+    skyState.code = current.weather_code;
+  }
+ 
+  async function loadByName(name){
+    try{
+      setStatus('Locating ' + name + '…');
+     const place = await geocode(name);
+      setStatus('Reading the instruments…');
+      const data = await fetchWeather(place.lat, place.lon);
+      renderCurrent(place, data.current);
+      renderForecast(data.daily);
+      setStatus('Logged ' + new Date().toLocaleTimeString());
+    } catch(err){
+      setStatus('Could not find that place — try a different spelling.');
+    }
+  }
+ 
+  async function loadByCoords(lat, lon){
+    try{
+      setStatus('Reading the instruments…');
+      const data = await fetchWeather(lat, lon);
+      renderCurrent({ name: 'Your location', admin: '' }, data.current);
+      renderForecast(data.daily);
+      setStatus('Logged ' + new Date().toLocaleTimeString());
+    } catch(err){
+      setStatus('Could not read local weather.');
+    }
+  }
+ 
+  els.searchBtn.addEventListener('click', () => {
+    const v = els.input.value.trim();
+    if (v) loadByName(v);
+  });
+  els.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter'){
+      const v = els.input.value.trim();
+      if (v) loadByName(v);
+    }
+  });
+  els.locBtn.addEventListener('click', () => {
+    if (!navigator.geolocation){ setStatus('Geolocation not supported.'); return; }
+    setStatus('Finding your location…');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => loadByCoords(pos.coords.latitude, pos.coords.longitude),
+      () => setStatus('Location permission denied.')
+    );
+  });
+ 
+  // initial default: a well-known city so the log isn't empty
+  loadByName('London');
+})();
+</script>
+</body>c
+</html>
+ 

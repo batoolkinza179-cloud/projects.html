@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #FAF6EE;
+    --card: #FFFFFF;
+    --ink: #22262B;
+    --ink-soft: #767F87;
+    --rule: rgba(34,38,43,0.10);
+    --sage: #6E9A78;
+    --sage-soft: #E4EEE3;
+    --coral: #E15A4B;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding: 48px 16px;
+  }
+  .app{
+    width: 100%;
+    max-width: 460px;
+  }
+  header{ margin-bottom: 22px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.01em;
+  }
+  .progress-tab{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-top: 10px;
+    background: var(--sage-soft);
+    color: #3E5C44;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 100px;
+  }
+  .progress-tab .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--sage);
+  }
+
+  .add-row{
+    display:flex;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .add-row input{
+    flex:1;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 13px 14px;
+    font-family:'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+  }
+  .add-row input:focus{ border-color: var(--sage); }
+  .add-row button{
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .add-row button:hover{ background: var(--sage); }
+
+  .filters{
+    display:flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .filter-btn{
+    background:none; border:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 8px 4px;
+    margin-right: 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transform: translateY(1px);
+  }
+  .filter-btn.active{ color: var(--ink); border-bottom-color: var(--sage); }
+
+  .list{ display:flex; flex-direction:column; }
+  .task{
+    display:flex;
+    align-items:flex-start;
+    gap: 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .check{
+    flex-shrink:0;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid var(--ink-soft);
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--card);
+    margin-top: 1px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .check svg{
+    width: 13px; height:13px;
+    stroke: white;
+    stroke-width: 3;
+    fill:none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    transition: stroke-dashoffset 0.25s ease;
+  }
+  .task.done .check{ background: var(--sage); border-color: var(--sage); }
+  .task.done .check svg{ stroke-dashoffset: 0; }
+
+  .task-text{
+    flex:1;
+    font-size: 15px;
+    line-height: 1.5;
+    padding-top: 1px;
+    word-break: break-word;
+  }
+  .task.done .task-text{
+    color: var(--ink-soft);
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-soft);
+  }
+
+  .del-btn{
+    flex-shrink:0;
+    background:none; border:none;
+    color: var(--ink-soft);
+    font-size: 18px;
+    line-height:1;
+    cursor:pointer;
+    padding: 2px 4px;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+  .del-btn:hover{ opacity:1; color: var(--coral); }
+
+  .empty{
+    text-align:center;
+    padding: 40px 10px;
+    color: var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .clear-row{
+    margin-top: 16px;
+    text-align:right;
+  }
+  .clear-row button{
+    background:none; border:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    text-decoration: underline;
+  }
+  .clear-row button:hover{ color: var(--coral); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <p class="eyebrow">Today's checklist</p>
+    <h1>To-do</h1>
+    <div class="progress-tab"><span class="dot"></span><span id="progressText">0 of 0 done</span></div>
+  </header>
+
+  <div class="add-row">
+    <input id="taskInput" type="text" placeholder="Add a task…" autocomplete="off">
+    <button id="addBtn">Add</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="active">Active</button>
+    <button class="filter-btn" data-filter="done">Done</button>
+  </div>
+
+  <div class="list" id="list"></div>
+  <p class="empty" id="emptyMsg" style="display:none;">Nothing here yet.</p>
+
+  <div class="clear-row">
+    <button id="clearDone">Clear completed</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  let tasks = [];
+  let filter = 'all';
+
+  const listEl = document.getElementById('list');
+  const emptyEl = document.getElementById('emptyMsg');
+  const progressEl = document.getElementById('progressText');
+  const input = document.getElementById('taskInput');
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  function addTask(text){
+    text = text.trim();
+    if (!text) return;
+    tasks.unshift({ id: uid(), text, done: false });
+    input.value = '';
+    render();
+  }
+
+  function toggleTask(id){
+    const t = tasks.find(t => t.id === id);
+    if (t) t.done = !t.done;
+    render();
+  }
+
+  function deleteTask(id){
+    tasks = tasks.filter(t => t.id !== id);
+    render();
+  }
+
+  function clearDone(){
+    tasks = tasks.filter(t => !t.done);
+    render();
+  }
+
+  function render(){
+    const visible = tasks.filter(t => {
+      if (filter === 'active') return !t.done;
+      if (filter === 'done') return t.done;
+      return true;
+    });
+
+    listEl.innerHTML = '';
+    visible.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'task' + (t.done ? ' done' : '');
+      row.innerHTML = `
+        <div class="check" role="checkbox" aria-checked="${t.done}" tabindex="0">
+          <svg viewBox="0 0 24 24"><polyline points="4,13 9,18 20,6"></polyline></svg>
+        </div>
+        <div class="task-text"></div>
+        <button class="del-btn" aria-label="Delete task">×</button>
+      `;
+      row.querySelector('.task-text').textContent = t.text;
+      row.querySelector('.check').addEventListener('click', () => toggleTask(t.id));
+      row.querySelector('.check').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleTask(t.id); }
+      });
+      row.querySelector('.del-btn').addEventListener('click', () => deleteTask(t.id));
+      listEl.appendChild(row);
+    });
+
+    emptyEl.style.display = visible.length ? 'none' : 'block';
+    const doneCount = tasks.filter(t => t.done).length;
+    progressEl.textContent = doneCount + ' of ' + tasks.length + ' done';
+  }
+
+  document.getElementById('addBtn').addEventListener('click', () => addTask(input.value));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTask(input.value); });
+  document.getElementById('clearDone').addEventListener('click', clearDone);
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  // seed with a couple of example tasks
+  tasks = [
+    { id: uid(), text: 'Add your first real task', done: false },
+    { id: uid(), text: 'Tap the circle to mark done', done: true },
+  ];
+  render();
+})();
+</script>
+</body>
+</html>

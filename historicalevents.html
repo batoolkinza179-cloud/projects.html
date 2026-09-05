@@ -1,0 +1,195 @@
+import { useState, useMemo } from "react";
+import { Plus, Trash2, Eye, MapPin, X, Crosshair } from "lucide-react";
+
+// ---- Seed content --------------------------------------------------------
+// Swap this for a fetch() to a real data source later — nothing else here
+// needs to change. x/y are percentage positions on the 1000x500 map canvas,
+// not true lat/lng, so plotting stays simple and dependency-free.
+const seedEvents = [
+  { id: 1, title: "Magna Carta sealed", year: 1215, place: "Runnymede, England", x
+    <div className="min-h-screen w-full transition-colors duration-500" style={{ background: palette.bg, color: palette.text, fontFamily: "'Source Serif 4', serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Source+Serif+4:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        .font-display { font-family: 'Cor-mono { font-family: 'IBM Plex Mono', monospace; er-input {
+          background: transparent; border: none; border-bottom: 1px dashed rgba(220,211,190,0.3);
+          padding: 3px 0; width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: inherit;
+        }
+        .ledger-input:focus { outline: none; border-bottom-color: #8C2F2F; }
+        @keyframes ping-ring {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(2.6); opacity: 0; }
+        }
+        .pin-ring { animation: ping-ring 2.4s ease-out infinite; }
+      `}</style>
+
+      <header className="flex items-center justify-between px-6 sm:px-10 py-6 border-b" style={{ borderColor: "rgba(220,211,190,0.12)" }}>
+        <div>
+          <h1 className="font-display italic text-2xl sm:text-3xl">Atlas of Record</h1>
+          <p className="font-mono text-[11px] tracking-widest uppercase mt-1" style={{ color: palette.muted }}>
+            {isManage ? "cartographer's desk" : "events across time"}
+          </p>
+        </div>
+        <button
+          onClick={() => { setMode(isManage ? "view" : "manage"); setPlacingId(null); }}
+          className="flex items-center gap-2 font-mono text-xs uppercase tracking-wide px-4 py-2 rounded-full border transition-colors"
+          style={{ borderColor: palette.accent, color: palette.accent }}
+        >
+          {isManage ? <Eye size={14} /> : <MapPin size={14} />}
+          {isManage ? "View map" : "Manage events"}
+        </button>
+      </header>
+
+      <main className="px-4 sm:px-8 py-8 max-w-5xl mx-auto">
+        {/* MAP */}
+        <div
+          className="relative w-full rounded-sm overflow-hidden select-none"
+          style={{ background: palette.panel, cursor: isManage && placingId !== null ? "crosshair" : "default" }}
+          onClick={handleMapClick}
+        >
+          <svg viewBox="0 0 1000 500" className="w-full h-auto block">
+            {continents.map((c) => (
+              <path key={c.id} d={c.d} fill={palette.ink} opacity={0.35} />
+            ))}
+            {(isManage ? events : visible).map((e) => {
+              const dimmed = !isManage && Number(e.year) > year;
+              return (
+                <g key={e.id} transform={`translate(${(e.x / 100) * 1000}, ${(e.y / 100) * 500})`} opacity={dimmed ? 0.15 : 1}>
+                  {!isManage && (
+                    <circle r="10" fill="none" stroke={palette.accent} strokeWidth="1.2" className="pin-ring" />
+                  )}
+                  <circle
+                    r="5"
+                    fill={palette.accent}
+                    stroke={palette.text}
+                    strokeWidth="0.8"
+                    className="cursor-pointer"
+                    onClick={(evt) => { evt.stopPropagation(); if (!isManage) setSelected(e); }}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+
+          {selected && !isManage && (
+            <div
+              className="absolute bottom-4 left-4 right-4 sm:left-auto sm:w-80 p-5 rounded-sm"
+              style={{ background: "rgba(15,30,31,0.95)", border: `1px solid ${palette.accent}` }}
+            >
+              <button onClick={() => setSelected(null)} className="absolute top-3 right-3">
+                <X size={14} color={palette.muted} />
+              </button>
+              <p className="font-mono text-[11px] uppercase tracking-widest mb-1" style={{ color: palette.accent }}>
+                {selected.year} · {selected.place}
+              </p>
+              <p className="font-display italic text-xl mb-2">{selected.title}</p>
+              <p className="text-sm leading-relaxed" style={{ color: palette.muted }}>{selected.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* TIMELINE RULER */}
+        {!isManage && (
+          <div className="mt-8">
+            <div className="flex justify-between font-mono text-[10px] uppercase tracking-wide mb-1" style={{ color: palette.muted }}>
+              {eras.map((era) => (
+                <span key={era.label}>{era.label}</span>
+              ))}
+            </div>
+            <div className="relative h-8 flex items-center">
+              <div className="absolute left-0 right-0 h-px" style={{ background: "rgba(220,211,190,0.25)" }} />
+              {Array.from({ length: 22 }).map((_, i) => (
+                <div key={i} className="absolute w-px h-2" style={{ left: `${(i / 21) * 100}%`, background: "rgba(220,211,190,0.3)" }} />
+              ))}
+              <input
+                type="range"
+                min={minYear}
+                max={maxYear}
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="w-full appearance-none bg-transparent relative z-10"
+                style={{ accentColor: palette.accent }}
+              />
+            </div>
+            <p className="font-mono text-sm text-center mt-1" style={{ color: palette.accent }}>{year}</p>
+          </div>
+        )}
+
+        {/* MANAGE PANEL */}
+        {isManage && (
+          <div className="mt-8">
+            <p className="font-mono text-[11px] uppercase tracking-widest mb-4" style={{ color: palette.muted }}>
+              {events.length} events charted — click "Reposition" then click the map to move a pin
+            </p>
+            <div className="space-y-5">
+              {events.map((e) => (
+                <div key={e.id} className="p-4 rounded-sm border border-dashed" style={{ borderColor: "rgba(220,211,190,0.25)", background: palette.panel }}>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-2">
+                    <label className="col-span-2">
+                      <span className="font-mono text-[10px] uppercase tracking-wide block mb-1" style={{ color: palette.muted }}>Title</span>
+                      <input className="ledger-input" value={e.title} onChange={(ev) => updateEvent(e.id, { title: ev.target.value })} />
+                    </label>
+                    <label>
+                      <span className="font-mono text-[10px] uppercase tracking-wide block mb-1" style={{ color: palette.muted }}>Year</span>
+                      <input className="ledger-input" value={e.year} onChange={(ev) => updateEvent(e.id, { year: ev.target.value })} />
+                    </label>
+                    <label>
+                      <span className="font-mono text-[10px] uppercase tracking-wide block mb-1" style={{ color: palette.muted }}>Place</span>
+                      <input className="ledger-input" value={e.place} onChange={(ev) => updateEvent(e.id, { place: ev.target.value })} />
+                    </label>
+                    <label className="col-span-2">
+                      <span className="font-mono text-[10px] uppercase tracking-wide block mb-1" style={{ color: palette.muted }}>Description</span>
+                      <textarea className="ledger-input resize-none" rows={2} value={e.description} onChange={(ev) => updateEvent(e.id, { description: ev.target.value })} />
+                    </label>
+                  </div>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setPlacingId(placingId === e.id ? null : e.id)}
+                      className="font-mono text-[11px] uppercase tracking-wide flex items-center gap-1"
+                      style={{ color: placingId === e.id ? palette.accent : palette.muted }}
+                    >
+                      <Crosshair size={13} /> {placingId === e.id ? "Click the map…" : "Reposition"}
+                    </button>
+                    <button onClick={() => removeEvent(e.id)} className="font-mono text-[11px] uppercase tracking-wide flex items-center gap-1" style={{ color: palette.muted }}>
+                      <Trash2 size={13} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-dashed" style={{ borderColor: "rgba(220,211,190,0.2)" }}>
+              {!draft ? (
+                <button onClick={() => setDraft(emptyDraft)} className="flex items-center gap-2 font-mono text-xs uppercase tracking-wide" style={{ color: palette.accent }}>
+                  <Plus size={14} /> New event
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 max-w-md">
+                  <input className="ledger-input col-span-2" placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+                  <input className="ledger-input" placeholder="Year" value={draft.year} onChange={(e) => setDraft({ ...draft, year: e.target.value })} />
+                  <input className="ledger-input" placeholder="Place" value={draft.place} onChange={(e) => setDraft({ ...draft, place: e.target.value })} />
+                  <div className="col-span-2 flex items-center gap-4">
+                    <button
+                      onClick={() => setPlacingId(placingId === "draft" ? null : "draft")}
+                      className="font-mono text-[11px] uppercase tracking-wide flex items-center gap-1"
+                      style={{ color: placingId === "draft" ? palette.accent : palette.muted }}
+                    >
+                      <Crosshair size={13} /> {placingId === "draft" ? "Click the map…" : `Set location (${draft.x.toFixed(0)}, ${draft.y.toFixed(0)})`}
+                    </button>
+                  </div>
+                  <div className="col-span-2 flex gap-3 pt-2">
+                    <button onClick={addEvent} className="font-mono text-xs uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: palette.accent, color: "#1A1210" }}>
+                      Save event
+                    </button>
+                    <button onClick={() => { setDraft(null); setPlacingId(null); }} className="font-mono text-xs uppercase tracking-wide" style={{ color: palette.muted }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

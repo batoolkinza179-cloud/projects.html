@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #16181D;
+    --panel: #1E2129;
+    --key: #262A33;
+    --key-hover: #2E333D;
+    --op: #E8A94B;
+    --op-active: #F4C179;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+    --danger: #E1605A;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    padding: 20px;
+  }
+  .calc{
+    width: 100%;
+    max-width: 340px;
+    background: var(--panel);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  }
+  .display{
+    padding: 22px 6px 18px;
+    text-align: right;
+  }
+  .prev{
+    font-size: 14px;
+    color: var(--dim);
+    min-height: 18px;
+    letter-spacing: 0.02em;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .curr{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 44px;
+    color: var(--text);
+    line-height: 1.15;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .keys{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  button{
+    border:none;
+    border-radius: 14px;
+    background: var(--key);
+    color: var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 18px;
+    padding: 18px 0;
+    cursor:pointer;
+    transition: background 0.12s ease, transform 0.08s ease;
+  }
+  button:active{ transform: scale(0.95); }
+  button:hover{ background: var(--key-hover); }
+
+  .fn{ color: var(--op); background: var(--key); font-size:15px; }
+  .op{ color: var(--op); font-size: 22px; }
+  .op.active{ background: var(--op); color: var(--bg); }
+  .zero{ grid-column: span 2; }
+  .equals{
+    background: var(--op);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .equals:hover{ background: var(--op-active); }
+  .clear{ color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="calc">
+  <div class="display">
+    <div class="prev" id="prevLine">&nbsp;</div>
+    <div class="curr" id="currLine">0</div>
+  </div>
+
+  <div class="keys">
+    <button class="fn clear" data-action="clear">AC</button>
+    <button class="fn" data-action="negate">±</button>
+    <button class="fn" data-action="percent">%</button>
+    <button class="op" data-op="÷">÷</button>
+
+    <button data-num="7">7</button>
+    <button data-num="8">8</button>
+    <button data-num="9">9</button>
+    <button class="op" data-op="×">×</button>
+
+    <button data-num="4">4</button>
+    <button data-num="5">5</button>
+    <button data-num="6">6</button>
+    <button class="op" data-op="−">−</button>
+
+    <button data-num="1">1</button>
+    <button data-num="2">2</button>
+    <button data-num="3">3</button>
+    <button class="op" data-op="+">+</button>
+
+    <button class="zero" data-num="0">0</button>
+    <button data-action="decimal">.</button>
+    <button class="equals" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const prevEl = document.getElementById('prevLine');
+  const currEl = document.getElementById('currLine');
+
+  let curr = '0';
+  let prev = null;
+  let op = null;
+  let resultShown = false;
+
+  function fmt(n){
+    if (!isFinite(n)) return 'Error';
+    // trim floating point noise, cap decimals
+    const rounded = Math.round((n + Number.EPSILON) * 1e10) / 1e10;
+    return rounded.toString();
+  }
+
+  function updateDisplay(){
+    currEl.textContent = curr;
+    prevEl.textContent = prev !== null && op ? `${fmt(prev)} ${op}` : '\u00A0';
+    document.querySelectorAll('.op').forEach(b => b.classList.remove('active'));
+    if (op){
+      const btn = document.querySelector(`.op[data-op="${op}"]`);
+      if (btn) btn.classList.add('active');
+    }
+  }
+
+  function inputDigit(d){
+    if (resultShown){ curr = d === '.' ? '0.' : d; resultShown = false; return; }
+    if (curr === '0' && d !== '.') { curr = d; return; }
+    if (d === '.' && curr.includes('.')) return;
+    curr += d;
+  }
+
+  function chooseOp(newOp){
+    if (op && prev !== null && !resultShown){
+      compute();
+    }
+    prev = parseFloat(curr);
+    op = newOp;
+    resultShown = true; // next digit starts fresh number
+  }
+
+  function compute(){
+    if (op === null || prev === null) return;
+    const a = prev, b = parseFloat(curr);
+    let res;
+    switch(op){
+      case '+': res = a + b; break;
+      case '−': res = a - b; break;
+      case '×': res = a * b; break;
+      case '÷': res = b === 0 ? NaN : a / b; break;
+      default: return;
+    }
+    curr = fmt(res);
+    prev = null;
+    op = null;
+    resultShown = true;
+  }
+
+  function clearAll(){
+    curr = '0'; prev = null; op = null; resultShown = false;
+  }
+
+  function negate(){
+    curr = fmt(parseFloat(curr) * -1);
+  }
+
+  function percent(){
+    curr = fmt(parseFloat(curr) / 100);
+  }
+
+  document.querySelectorAll('[data-num]').forEach(btn => {
+    btn.addEventListener('click', () => { inputDigit(btn.dataset.num); updateDisplay(); });
+  });
+  document.querySelectorAll('[data-op]').forEach(btn => {
+    btn.addEventListener('click', () => { chooseOp(btn.dataset.op); updateDisplay(); });
+  });
+  document.querySelector('[data-action="decimal"]').addEventListener('click', () => { inputDigit('.'); updateDisplay(); });
+  document.querySelector('[data-action="equals"]').addEventListener('click', () => { compute(); updateDisplay(); });
+  document.querySelector('[data-action="clear"]').addEventListener('click', () => { clearAll(); updateDisplay(); });
+  document.querySelector('[data-action="negate"]').addEventListener('click', () => { negate(); updateDisplay(); });
+  document.querySelector('[data-action="percent"]').addEventListener('click', () => { percent(); updateDisplay(); });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9'){ inputDigit(e.key); updateDisplay(); }
+    else if (e.key === '.'){ inputDigit('.'); updateDisplay(); }
+    else if (e.key === '+'){ chooseOp('+'); updateDisplay(); }
+    else if (e.key === '-'){ chooseOp('−'); updateDisplay(); }
+    else if (e.key === '*'){ chooseOp('×'); updateDisplay(); }
+    else if (e.key === '/'){ e.preventDefault(); chooseOp('÷'); updateDisplay(); }
+    else if (e.key === 'Enter' || e.key === '='){ compute(); updateDisplay(); }
+    else if (e.key === 'Escape'){ clearAll(); updateDisplay(); }
+    else if (e.key === 'Backspace'){
+      curr = curr.length > 1 ? curr.slice(0,-1) : '0';
+      updateDisplay();
+    }
+  });
+
+  updateDisplay();
+})();
+</script>
+</body>
+</html>

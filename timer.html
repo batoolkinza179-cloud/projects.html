@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timer / Stopwatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #1C1F26;
+    --ring-track: #2A2E37;
+    --amber: #E8A94B;
+    --teal: #5FBFA6;
+    --coral: #E1605A;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .app{ width:100%; max-width: 380px; text-align:center; }
+
+  .tabs{
+    display:flex;
+    background: var(--panel);
+    border-radius: 100px;
+    padding: 4px;
+    margin-bottom: 30px;
+  }
+  .tabs button{
+    flex:1;
+    background:none; border:none;
+    color: var(--dim);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 10px 0;
+    border-radius: 100px;
+    cursor:pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tabs button.active{ background: var(--amber); color: #14161A; font-weight:600; }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  /* ---- ring display ---- */
+  .ring-wrap{
+    position:relative;
+    width: 260px; height: 260px;
+    margin: 0 auto 26px;
+  }
+  svg{ transform: rotate(-90deg); }
+  .ring-bg{ fill:none; stroke: var(--ring-track); stroke-width: 10; }
+  .ring-fg{
+    fill:none; stroke: var(--amber); stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.2s linear;
+  }
+  .ring-center{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .time-big{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 44px;
+    font-variant-numeric: tabular-nums;
+  }
+  .time-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: 6px;
+  }
+
+  /* ---- timer inputs ---- */
+  .time-inputs{
+    display:flex;
+    justify-content:center;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .time-inputs.hidden{ display:none; }
+  .time-field{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .time-field input{
+    width: 62px;
+    background: var(--panel);
+    border: 1px solid var(--ring-track);
+    border-radius: 10px;
+    color: var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 20px;
+    text-align:center;
+    padding: 10px 0;
+    outline: none;
+  }
+  .time-field input:focus{ border-color: var(--amber); }
+  .time-field label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .controls{
+    display:flex;
+    justify-content:center;
+    gap: 12px;
+  }
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 13px 26px;
+    border-radius: 100px;
+    border: none;
+    cursor:pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  .btn:active{ transform: scale(0.96); }
+  .btn-primary{ background: var(--amber); color: #14161A; font-weight:600; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-secondary{ background: var(--panel); color: var(--text); border: 1px solid var(--ring-track); }
+  .btn-secondary:hover{ border-color: var(--dim); }
+  .btn-danger{ background: var(--panel); color: var(--coral); border: 1px solid var(--ring-track); }
+  .btn-danger:hover{ border-color: var(--coral); }
+
+  /* ---- laps ---- */
+  .laps{
+    margin-top: 26px;
+    text-align:left;
+    max-height: 200px;
+    overflow-y:auto;
+  }
+  .laps.hidden{ display:none; }
+  .lap-row{
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--ring-track);
+    color: var(--dim);
+  }
+  .lap-row span:first-child{ color: var(--text); }
+  .lap-row.best span:last-child{ color: var(--teal); }
+  .lap-row.worst span:last-child{ color: var(--coral); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="tabs">
+    <button class="active" data-panel="timerPanel">Timer</button>
+    <button data-panel="stopwatchPanel">Stopwatch</button>
+  </div>
+
+  <!-- ===== TIMER ===== -->
+  <div class="panel active" id="timerPanel">
+    <div class="ring-wrap">
+      <svg width="260" height="260" viewBox="0 0 260 260">
+        <circle class="ring-bg" cx="130" cy="130" r="115"></circle>
+        <circle class="ring-fg" id="timerRing" cx="130" cy="130" r="115"
+          stroke-dasharray="722.6" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="time-big" id="timerDisplay">00:00</div>
+        <div class="time-label" id="timerState">Ready</div>
+      </div>
+    </div>
+
+    <div class="time-inputs" id="timerInputs">
+      <div class="time-field">
+        <input type="number" id="minInput" value="5" min="0" max="99">
+        <label>Min</label>
+      </div>
+      <div class="time-field">
+        <input type="number" id="secInput" value="0" min="0" max="59">
+        <label>Sec</label>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="timerStartBtn">Start</button>
+      <button class="btn btn-secondary" id="timerResetBtn">Reset</button>
+    </div>
+  </div>
+
+  <!-- ===== STOPWATCH ===== -->
+  <div class="panel" id="stopwatchPanel">
+    <div class="ring-wrap">
+      <svg width="260" height="260" viewBox="0 0 260 260">
+        <circle class="ring-bg" cx="130" cy="130" r="115"></circle>
+        <circle class="ring-fg" id="swRing" cx="130" cy="130" r="115"
+          stroke-dasharray="722.6" stroke-dashoffset="722.6" style="stroke:#5FBFA6;"></circle>
+      </svg>
+      <div class="ring-center">
+        <div class="time-big" id="swDisplay">00:00.0</div>
+        <div class="time-label" id="swState">Ready</div>
+      </div>
+    </div>
+
+    <div class="controls" style="margin-bottom:18px;">
+      <button class="btn btn-primary" id="swStartBtn">Start</button>
+      <button class="btn btn-secondary" id="swLapBtn" disabled>Lap</button>
+      <button class="btn btn-danger" id="swResetBtn">Reset</button>
+    </div>
+
+    <div class="laps" id="lapsList"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- tabs ----------
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.panel).classList.add('active');
+    });
+  });
+
+  const CIRC = 722.6;
+
+  // ---------- TIMER ----------
+  (function(){
+    const ring = document.getElementById('timerRing');
+    const display = document.getElementById('timerDisplay');
+    const stateEl = document.getElementById('timerState');
+    const inputsWrap = document.getElementById('timerInputs');
+    const minInput = document.getElementById('minInput');
+    const secInput = document.getElementById('secInput');
+    const startBtn = document.getElementById('timerStartBtn');
+    const resetBtn = document.getElementById('timerResetBtn');
+
+    let totalMs = 0, remainingMs = 0, running = false, intervalId = null, lastTick = null;
+
+    function fmt(ms){
+      const s = Math.max(0, Math.ceil(ms/1000));
+      const m = Math.floor(s/60);
+      const sec = s % 60;
+      return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+    }
+
+    function updateDisplay(){
+      display.textContent = fmt(remainingMs);
+      const frac = totalMs > 0 ? remainingMs / totalMs : 0;
+      ring.style.strokeDashoffset = (CIRC * (1 - frac)).toFixed(1);
+    }
+
+    function tick(){
+      const now = Date.now();
+      const delta = now - lastTick;
+      lastTick = now;
+      remainingMs -= delta;
+      if (remainingMs <= 0){
+        remainingMs = 0;
+        updateDisplay();
+        stopTimer();
+        stateEl.textContent = "Time's up";
+        return;
+      }
+      updateDisplay();
+    }
+
+    function startTimer(){
+      if (running) return;
+      if (remainingMs <= 0){
+        const m = parseInt(minInput.value) || 0;
+        const s = parseInt(secInput.value) || 0;
+        totalMs = (m * 60 + s) * 1000;
+        remainingMs = totalMs;
+        if (totalMs <= 0) return;
+      }
+      running = true;
+      inputsWrap.classList.add('hidden');
+      startBtn.textContent = 'Pause';
+      stateEl.textContent = 'Running';
+      lastTick = Date.now();
+      intervalId = setInterval(tick, 200);
+    }
+
+    function pauseTimer(){
+      running = false;
+      clearInterval(intervalId);
+      startBtn.textContent = 'Resume';
+      stateEl.textContent = 'Paused';
+    }
+
+    function stopTimer(){
+      running = false;
+      clearInterval(intervalId);
+      startBtn.textContent = 'Start';
+    }
+
+    function resetTimer(){
+      stopTimer();
+      totalMs = 0; remainingMs = 0;
+      inputsWrap.classList.remove('hidden');
+      stateEl.textContent = 'Ready';
+      display.textContent = '00:00';
+      ring.style.strokeDashoffset = 0;
+    }
+
+    startBtn.addEventListener('click', () => { running ? pauseTimer() : startTimer(); });
+    resetBtn.addEventListener('click', resetTimer);
+    [minInput, secInput].forEach(inp => inp.addEventListener('input', () => {
+      const m = parseInt(minInput.value) || 0;
+      const s = parseInt(secInput.value) || 0;
+      display.textContent = fmt((m*60+s)*1000);
+    }));
+  })();
+
+  // ---------- STOPWATCH ----------
+  (function(){
+    const ring = document.getElementById('swRing');
+    const display = document.getElementById('swDisplay');
+    const stateEl = document.getElementById('swState');
+    const startBtn = document.getElementById('swStartBtn');
+    const lapBtn = document.getElementById('swLapBtn');
+    const resetBtn = document.getElementById('swResetBtn');
+    const lapsList = document.getElementById('lapsList');
+
+    let elapsed = 0, running = false, intervalId = null, lastTick = null;
+    let laps = [];
+
+    function fmt(ms){
+      const totalTenths = Math.floor(ms/100);
+      const tenths = totalTenths % 10;
+      const totalSec = Math.floor(ms/1000);
+      const m = Math.floor(totalSec/60);
+      const s = totalSec % 60;
+      return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + '.' + tenths;
+    }
+
+    function updateDisplay(){
+      display.textContent = fmt(elapsed);
+      // ring sweeps once per 60s, ambient motion
+      const frac = (elapsed % 60000) / 60000;
+      ring.style.strokeDashoffset = (CIRC * (1 - frac)).toFixed(1);
+    }
+
+    function tick(){
+      const now = Date.now();
+      elapsed += now - lastTick;
+      lastTick = now;
+      updateDisplay();
+    }
+
+    function start(){
+      running = true;
+      lastTick = Date.now();
+      intervalId = setInterval(tick, 100);
+      startBtn.textContent = 'Pause';
+      stateEl.textContent = 'Running';
+      lapBtn.disabled = false;
+    }
+
+    function pause(){
+      running = false;
+      clearInterval(intervalId);
+      startBtn.textContent = 'Resume';
+      stateEl.textContent = 'Paused';
+    }
+
+    function reset(){
+      running = false;
+      clearInterval(intervalId);
+      elapsed = 0;
+      laps = [];
+      startBtn.textContent = 'Start';
+      stateEl.textContent = 'Ready';
+      lapBtn.disabled = true;
+      lapsList.innerHTML = '';
+      updateDisplay();
+    }
+
+    function renderLaps(){
+      lapsList.innerHTML = '';
+      if (!laps.length) return;
+      const times = laps.map(l => l.delta);
+      const best = Math.min(...times), worst = Math.max(...times);
+      laps.forEach((l, i) => {
+        const row = document.createElement('div');
+        row.className = 'lap-row';
+        if (laps.length > 1){
+          if (l.delta === best) row.classList.add('best');
+          if (l.delta === worst) row.classList.add('worst');
+        }
+        row.innerHTML = `<span>Lap ${laps.length - i}</span><span>${fmt(l.delta)}</span>`;
+        lapsList.appendChild(row);
+      });
+    }
+
+    function addLap(){
+      const prevTotal = laps.length ? laps[0].total : 0;
+      const delta = elapsed - prevTotal;
+      laps.unshift({ total: elapsed, delta });
+      renderLaps();
+    }
+
+    startBtn.addEventListener('click', () => { running ? pause() : start(); });
+    lapBtn.addEventListener('click', addLap);
+    resetBtn.addEventListener('click', reset);
+
+    updateDisplay();
+  })();
+})();
+</script>
+</body>
+</html>

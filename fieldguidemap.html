@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Field Guide — San Francisco Third Places</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c2b26;
+    --paper:#f2ecd9;
+    --paper-dim:#e8dfc6;
+    --teal:#1f3a3d;
+    --teal-dark:#132628;
+    --mustard:#c99a2e;
+    --coral:#d9603b;
+    --moss:#4a5d3a;
+    --line: rgba(28,43,38,0.16);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:'Inter',sans-serif;color:var(--ink);background:var(--teal-dark);}
+  #app{display:flex;height:100vh;width:100vw;overflow:hidden;}
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    width:380px;min-width:380px;
+    background:var(--paper);
+    display:flex;flex-direction:column;
+    border-right:3px solid var(--teal-dark);
+    position:relative;
+    z-index:10;
+  }
+  #header{
+    padding:22px 22px 16px 22px;
+    border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(circle at 90% -10%, rgba(201,154,46,0.18), transparent 55%),
+      var(--paper);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--moss); margin-bottom:6px; display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow::before{content:'';width:16px;height:1px;background:var(--moss);display:inline-block;}
+  h1{
+    font-family:'Fraunces',serif; font-weight:600; font-size:28px; line-height:1.05;
+    margin:0 0 6px 0; letter-spacing:-0.01em;
+  }
+  h1 em{font-style:italic; color:var(--coral); font-weight:400;}
+  .sub{font-size:13px; color:#5b5346; line-height:1.5; margin:0;}
+
+  #filters{
+    display:flex; flex-wrap:wrap; gap:8px;
+    padding:14px 22px; border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  .stamp{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; letter-spacing:0.04em;
+    padding:6px 12px 6px 10px;
+    border:1.5px dashed rgba(28,43,38,0.35);
+    border-radius:3px;
+    background:transparent;
+    cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+    color:var(--ink);
+    transition:all .15s ease;
+    user-select:none;
+  }
+  .stamp .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .stamp.active{
+    background:var(--teal); color:var(--paper); border-color:var(--teal); border-style:solid;
+  }
+  .stamp:hover{border-color:var(--ink);}
+
+  #count{
+    padding:10px 22px; font-family:'JetBrains Mono',monospace; font-size:11px;
+    color:#7a7260; letter-spacing:0.03em; border-bottom:1px solid var(--line);
+  }
+
+  #list{flex:1; overflow-y:auto; padding:8px 12px 24px 12px;}
+  #list::-webkit-scrollbar{width:8px;}
+  #list::-webkit-scrollbar-thumb{background:var(--paper-dim); border-radius:4px;}
+
+  .card{
+    padding:14px 12px; margin:4px 0; border-radius:8px; cursor:pointer;
+    border:1px solid transparent;
+    transition:all .15s ease;
+    position:relative;
+  }
+  .card:hover{background:var(--paper-dim);}
+  .card.selected{
+    background:var(--teal); border-color:var(--teal-dark);
+  }
+  .card.selected .card-title, .card.selected .card-meta{color:var(--paper);}
+  .card.selected .card-note{color:rgba(242,236,217,0.75);}
+
+  .card-top{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+  .tag-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .card-title{font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--ink);}
+  .card-meta{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#7a7260;
+    text-transform:uppercase; letter-spacing:0.05em; margin-left:auto;
+  }
+  .card-note{font-size:12.5px; color:#5b5346; line-height:1.45; margin-top:2px;}
+
+  /* ---------- Map ---------- */
+  #map-wrap{flex:1; position:relative;}
+  #map{height:100%; width:100%; background:#dfe6df;}
+
+  .leaflet-popup-content-wrapper{
+    background:var(--paper); color:var(--ink); border-radius:6px;
+    font-family:'Inter',sans-serif;
+  }
+  .leaflet-popup-tip{background:var(--paper);}
+  .popup-title{font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin-bottom:2px;}
+  .popup-note{font-size:12px; color:#5b5346;}
+
+  .pin{
+    width:26px;height:26px;border-radius:50% 50% 50% 0;
+    transform:rotate(-45deg);
+    border:2px solid var(--paper);
+    box-shadow:0 2px 6px rgba(0,0,0,0.35);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pin.selected{width:32px;height:32px; box-shadow:0 3px 10px rgba(0,0,0,0.5); z-index:1000 !important;}
+
+  #legend-corner{
+    position:absolute; bottom:18px; left:18px; z-index:400;
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.06em;
+    color:var(--paper); background:rgba(19,38,40,0.82);
+    padding:8px 12px; border-radius:6px; text-transform:uppercase;
+    border:1px solid rgba(242,236,217,0.2);
+  }
+
+  @media (max-width: 760px){
+    #app{flex-direction:column;}
+    #sidebar{width:100%; min-width:0; height:46%; border-right:none; border-bottom:3px solid var(--teal-dark);}
+    #map-wrap{height:54%;}
+  }
+
+  :focus-visible{outline:2px solid var(--coral); outline-offset:2px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="header">
+      <div class="eyebrow">Field Guide No. 4</div>
+      <h1>San Francisco<br/><em>Third Places</em></h1>
+      <p class="sub">A working list of cafés, bookshops, parks and rooms worth lingering in — the ones that aren't home, aren't work, but somehow feel like both.</p>
+    </div>
+    <div id="filters"></div>
+    <div id="count"></div>
+    <div id="list"></div>
+  </div>
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="legend-corner">17 spots · click a pin or a card</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const CATEGORIES = {
+  cafe:    { label: 'Café',      color: '#c99a2e' },
+  book:    { label: 'Bookshop',  color: '#d9603b' },
+  park:    { label: 'Park',      color: '#4a5d3a' },
+  room:    { label: 'Third Room',color: '#1f3a3d' }
+};
+
+const PLACES = [
+  { id:1, name:'Trouble Coffee & Coconut Club', cat:'cafe', lat:37.7601, lng:-122.4934, note:'Ocean Beach outpost. One bench, one view, a toasted coconut on the side.' },
+  { id:2, name:'Sightglass Coffee (SoMa)', cat:'cafe', lat:37.7714, lng:-122.4090, note:'Roaster on-site — you can watch the drum turning while you wait.' },
+  { id:3, name:'Caffe Trieste', cat:'cafe', lat:37.8009, lng:-122.4108, note:'North Beach institution; opera on the jukebox most Saturdays.' },
+  { id:4, name:'Andytown Coffee Roasters', cat:'cafe', lat:37.7423, lng:-122.4913, note:'Foggy-day regulars, snowy plover latte art, a genuine neighborhood hearth.' },
+  { id:5, name:'City Lights Booksellers', cat:'book', lat:37.7968, lng:-122.4067, note:'Beat-era landmark. The poetry room upstairs is built for lingering.' },
+  { id:6, name:'Green Apple Books', cat:'book', lat:37.7825, lng:-122.4655, note:'Creaky floors, two full storefronts, used stock stacked to the ceiling.' },
+  { id:7, name:'Dog Eared Books', cat:'book', lat:37.7601, lng:-122.4212, note:'Mission staple; community bulletin board out front worth a read.' },
+  { id:8, name:'Alexander Book Company', cat:'book', lat:37.7897, lng:-122.4014, note:'Quiet, tall-shelved, FiDi refuge from the lunch rush outside.' },
+  { id:9, name:'Dolores Park', cat:'park', lat:37.7596, lng:-122.4269, note:'The city\'s living room — taco carts, skyline view, a slope for every mood.' },
+  { id:10, name:'Golden Gate Park — Botanical Garden', cat:'park', lat:37.7663, lng:-122.4706, note:'55 acres, benches tucked everywhere, fog on the redwood grove.' },
+  { id:11, name:'Lands End Lookout', cat:'park', lat:37.7783, lng:-122.5107, note:'Cliffside trail with Sutro Bath ruins and reliable, dramatic wind.' },
+  { id:12, name:'Alta Plaza Park', cat:'park', lat:37.7909, lng:-122.4374, note:'Terraced lawns and a genuinely great skyline-and-bay view up top.' },
+  { id:13, name:'San Francisco Public Library — Main', cat:'room', lat:37.7790, lng:-122.4159, note:'Atrium light well, six floors, a chess room nobody remembers is there.' },
+  { id:14, name:'The Mechanics\' Institute', cat:'room', lat:37.7900, lng:-122.4034, note:'Members\' library and chess club since 1854 — day passes welcome.' },
+  { id:15, name:'Internet Archive (Funston Ave)', cat:'room', lat:37.7822, lng:-122.4622, note:'A former church, now a server farm and reading room. Genuinely strange and lovely.' },
+  { id:16, name:'Interior Private Bath House', cat:'room', lat:37.7627, lng:-122.4256, note:'Communal soaking rooms just off Valencia — silence is the house rule.' },
+  { id:17, name:'The Battery Rooftop', cat:'room', lat:37.7969, lng:-122.4012, note:'Members\' club, but the rooftop deck view over the Bay Bridge is the point.' }
+];
+
+let activeCats = new Set(Object.keys(CATEGORIES));
+let selectedId = null;
+const markers = {};
+
+// ---- Map setup ----
+const map = L.map('map', { zoomControl:false }).setView([37.7749, -122.4494], 12.3);
+L.control.zoom({ position:'bottomright' }).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; OpenStreetMap contributors &copy; CARTO',
+  maxZoom:19
+}).addTo(map);
+
+function pinIcon(cat, isSelected){
+  const color = CATEGORIES[cat].color;
+  return L.divIcon({
+    className:'',
+    html:`<div class="pin ${isSelected?'selected':''}" style="background:${color}"></div>`,
+    iconSize:[26,26],
+    iconAnchor:[13,26],
+    popupAnchor:[0,-24]
+  });
+}
+
+PLACES.forEach(p=>{
+  const marker = L.marker([p.lat,p.lng], { icon: pinIcon(p.cat,false) })
+    .bindPopup(`<div class="popup-title">${p.name}</div><div class="popup-note">${p.note}</div>`);
+  marker.on('click', ()=> selectPlace(p.id, true));
+  markers[p.id] = marker;
+});
+
+function refreshMapVisibility(){
+  Object.values(markers).forEach(m=>map.removeLayer(m));
+  PLACES.filter(p=>activeCats.has(p.cat)).forEach(p=>markers[p.id].addTo(map));
+}
+refreshMapVisibility();
+
+// ---- Filters ----
+const filtersEl = document.getElementById('filters');
+Object.entries(CATEGORIES).forEach(([key,meta])=>{
+  const btn = document.createElement('button');
+  btn.className = 'stamp active';
+  btn.innerHTML = `<span class="dot" style="background:${meta.color}"></span>${meta.label}`;
+  btn.addEventListener('click', ()=>{
+    if(activeCats.has(key)){ activeCats.delete(key); btn.classList.remove('active'); }
+    else { activeCats.add(key); btn.classList.add('active'); }
+    refreshMapVisibility();
+    renderList();
+  });
+  filtersEl.appendChild(btn);
+});
+
+// ---- List ----
+const listEl = document.getElementById('list');
+const countEl = document.getElementById('count');
+
+function renderList(){
+  const visible = PLACES.filter(p=>activeCats.has(p.cat));
+  countEl.textContent = `${visible.length} of ${PLACES.length} spots shown`;
+  listEl.innerHTML = '';
+  visible.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'card' + (p.id===selectedId ? ' selected' : '');
+    card.innerHTML = `
+      <div class="card-top">
+        <span class="tag-dot" style="background:${CATEGORIES[p.cat].color}"></span>
+        <span class="card-title">${p.name}</span>
+        <span class="card-meta">${CATEGORIES[p.cat].label}</span>
+      </div>
+      <div class="card-note">${p.note}</div>
+    `;
+    card.addEventListener('click', ()=> selectPlace(p.id, false));
+    listEl.appendChild(card);
+  });
+}
+
+function selectPlace(id, fromMap){
+  const prevId = selectedId;
+  selectedId = id;
+  const p = PLACES.find(x=>x.id===id);
+
+  if(prevId && markers[prevId]) markers[prevId].setIcon(pinIcon(PLACES.find(x=>x.id===prevId).cat, false));
+  markers[id].setIcon(pinIcon(p.cat, true));
+
+  if(!fromMap){
+    map.flyTo([p.lat,p.lng], 15, { duration:0.6 });
+    markers[id].openPopup();
+  }
+  renderList();
+  const sel = listEl.querySelector('.card.selected');
+  if(sel) sel.scrollIntoView({ block:'nearest', behavior:'smooth' });
+}
+
+renderList();
+</script>
+</body>
+</html>

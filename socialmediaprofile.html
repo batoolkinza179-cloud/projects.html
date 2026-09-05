@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>@mile.marker — Trail Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --slate:#20262b;
+    --slate-2:#2a3238;
+    --ice:#cfe0e8;
+    --amber:#e8963d;
+    --pine:#3f5d47;
+    --paper:#f5f3ee;
+    --line: rgba(245,243,238,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--slate);color:var(--paper);font-family:'Sora',sans-serif;}
+  #page{max-width:920px; margin:0 auto; padding:0 20px 80px 20px;}
+
+  /* ---- Cover ---- */
+  #cover{
+    height:210px; margin:0 -20px; position:relative; overflow:hidden; border-radius:0 0 20px 20px;
+    background:
+      linear-gradient(to bottom, transparent 55%, var(--slate) 100%),
+      linear-gradient(115deg, #3f5d47 0%, #20262b 60%, #16191c 100%);
+  }
+  #cover-ridge{
+    position:absolute; bottom:0; left:0; width:100%; height:60%;
+    background:
+      polygon-fallback;
+    clip-path: polygon(0% 100%, 0% 55%, 12% 30%, 22% 48%, 34% 18%, 46% 42%, 58% 12%, 70% 40%, 82% 22%, 92% 46%, 100% 30%, 100% 100%);
+    background:linear-gradient(180deg, rgba(63,93,71,0.55), rgba(32,38,43,0.9));
+  }
+
+  #profile-head{display:flex; align-items:flex-end; gap:22px; margin-top:-52px; padding:0 12px; position:relative; z-index:2;}
+  #avatar{
+    width:112px; height:112px; border-radius:16px; border:5px solid var(--slate);
+    background:radial-gradient(circle at 30% 25%, var(--amber), var(--pine) 75%);
+    box-shadow:0 10px 24px rgba(0,0,0,0.4); flex-shrink:0;
+  }
+  #head-info{padding-bottom:8px; flex:1;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--amber); margin-bottom:4px;
+  }
+  h1{font-family:'Spectral',serif; font-style:italic; font-weight:600; font-size:27px; margin:0 0 2px 0; color:var(--paper);}
+  #handle{font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(245,243,238,0.5);}
+
+  #actions{display:flex; gap:10px; padding-bottom:8px;}
+  .btn{font-family:'Sora',sans-serif; font-weight:600; font-size:13.5px; padding:9px 18px; border-radius:8px; cursor:pointer; border:1.5px solid transparent;}
+  #follow-btn{background:var(--amber); color:var(--slate);}
+  #follow-btn:hover{background:#f0a854;}
+  #follow-btn.following{background:transparent; border-color:var(--paper); color:var(--paper);}
+  #msg-btn{background:transparent; border-color:var(--line); color:var(--paper);}
+  #msg-btn:hover{border-color:var(--paper);}
+
+  /* ---- Bio ---- */
+  #bio-row{display:flex; gap:40px; margin:24px 0 6px 0; padding:0 12px; flex-wrap:wrap;}
+  #bio{max-width:440px; font-size:14px; line-height:1.6; color:rgba(245,243,238,0.75);}
+  #bio b{color:var(--amber);}
+  #stats{display:flex; gap:26px; margin-left:auto;}
+  .stat{text-align:center;}
+  .stat-num{font-family:'Spectral',serif; font-weight:600; font-size:21px; display:block; color:var(--paper);}
+  .stat-label{font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; color:rgba(245,243,238,0.45); letter-spacing:0.04em;}
+
+  /* ---- Elevation divider ---- */
+  #elevation{margin:22px 12px 4px 12px;}
+  #elevation svg{width:100%; height:44px; display:block;}
+
+  /* ---- Tabs ---- */
+  #tabs{display:flex; gap:0; margin:18px 0 18px 0; padding:0 12px; border-bottom:1px solid var(--line);}
+  .tab{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:10px 4px; margin-right:24px; cursor:pointer; color:rgba(245,243,238,0.4);
+    border-bottom:2px solid transparent; position:relative; top:1px;
+  }
+  .tab.active{color:var(--paper); border-bottom-color:var(--amber); font-weight:700;}
+
+  /* ---- Log entries ---- */
+  #log{padding:0 12px; display:flex; flex-direction:column; gap:12px;}
+  .entry{
+    display:flex; gap:16px; background:var(--slate-2); border-radius:12px; padding:16px; border:1px solid var(--line);
+  }
+  .entry-marker{
+    flex-shrink:0; width:64px; height:64px; border-radius:10px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace;
+  }
+  .entry-marker .mm-num{font-size:16px; font-weight:700; color:var(--paper);}
+  .entry-marker .mm-label{font-size:8.5px; text-transform:uppercase; color:rgba(245,243,238,0.6); margin-top:2px;}
+  .entry-body{flex:1;}
+  .entry-title{font-family:'Spectral',serif; font-weight:600; font-size:16.5px; margin-bottom:3px; color:var(--paper);}
+  .entry-meta{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(245,243,238,0.45); text-transform:uppercase; margin-bottom:6px;}
+  .entry-note{font-size:13px; color:rgba(245,243,238,0.7); line-height:1.55;}
+  .entry-stats{display:flex; gap:14px; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(245,243,238,0.5);}
+
+  /* ---- Gear panel ---- */
+  #gear-panel, #stats-panel{padding:0 12px 20px 12px; display:none;}
+  #gear-panel.show, #stats-panel.show{display:block;}
+  #log.hide{display:none;}
+  #gear-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; margin-top:8px;}
+  .gear-item{background:var(--slate-2); border-radius:10px; padding:14px; border:1px solid var(--line);}
+  .gear-cat{font-family:'JetBrains Mono',monospace; font-size:9.5px; text-transform:uppercase; color:var(--amber); margin-bottom:6px; letter-spacing:0.04em;}
+  .gear-name{font-family:'Spectral',serif; font-weight:600; font-size:14.5px; color:var(--paper);}
+  .gear-weight{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:rgba(245,243,238,0.5); margin-top:2px;}
+
+  #stats-panel{font-size:14px; line-height:1.8; color:rgba(245,243,238,0.75);}
+  .stats-block{margin-bottom:18px;}
+  .stats-label{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--amber); margin-bottom:6px;}
+
+  @media(max-width:600px){
+    #stats{margin-left:0; margin-top:14px;}
+    #bio-row{flex-direction:column; gap:6px;}
+    .entry{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div id="page">
+  <div id="cover"><div id="cover-ridge"></div></div>
+  <div id="profile-head">
+    <div id="avatar"></div>
+    <div id="head-info">
+      <div class="eyebrow">Thru-hiker · currently: PCT, Section J</div>
+      <h1>Mile Marker</h1>
+      <div id="handle">@mile.marker</div>
+    </div>
+    <div id="actions">
+      <button id="follow-btn" class="btn">Follow</button>
+      <button id="msg-btn" class="btn">Message</button>
+    </div>
+  </div>
+
+  <div id="bio-row">
+    <div id="bio">Walking the <b>Pacific Crest Trail</b> north to south, one resupply box at a time. Posting mile markers, camp views, and the gear that's actually earning its weight. Started at Manning Park, 94 days in.</div>
+    <div id="stats">
+      <div class="stat"><span class="stat-num" id="stat-miles">1,842</span><span class="stat-label">Miles logged</span></div>
+      <div class="stat"><span class="stat-num" id="stat-followers">14,320</span><span class="stat-label">Followers</span></div>
+      <div class="stat"><span class="stat-num">94</span><span class="stat-label">Days on trail</span></div>
+    </div>
+  </div>
+
+  <div id="elevation">
+    <svg viewBox="0 0 600 44" preserveAspectRatio="none">
+      <polyline points="0,38 40,30 80,32 120,14 160,20 200,8 240,18 280,26 320,10 360,22 400,16 440,30 480,20 520,34 560,24 600,36"
+        fill="none" stroke="#e8963d" stroke-width="2" opacity="0.7"/>
+    </svg>
+  </div>
+
+  <div id="tabs">
+    <div class="tab active" data-tab="log">Trail Log</div>
+    <div class="tab" data-tab="gear">Gear</div>
+    <div class="tab" data-tab="stats">Stats</div>
+  </div>
+
+  <div id="log"></div>
+
+  <div id="gear-panel">
+    <div id="gear-grid"></div>
+  </div>
+
+  <div id="stats-panel">
+    <div class="stats-block">
+      <div class="stats-label">This section</div>
+      Section J, Sierra Nevada — 178 miles, three resupply stops, currently on day 6 of an estimated 9.
+    </div>
+    <div class="stats-block">
+      <div class="stats-label">Pace</div>
+      Averaging 19.6 miles a day since Kennedy Meadows, up from 14 through the desert section.
+    </div>
+    <div class="stats-block">
+      <div class="stats-label">Next resupply</div>
+      Vermilion Valley Resort, mile 1,860 — ferry across Edison Lake, then two zero days before Mammoth.
+    </div>
+  </div>
+</div>
+
+<script>
+const MARKER_TONES = ['#3f5d47','#e8963d','#5a7263','#8a6a3f'];
+
+const LOG_ENTRIES = [
+  { mile: 1842, title:'Above Silver Pass', meta:'Sierra Nevada · Day 94', note:'Snow lingering on the north face, but the trail was clear by 10am. Camped at 10,800 ft with a full view of the Silver Divide.', likes:412, comments:23 },
+  { mile: 1798, title:'Edison Lake ferry', meta:'Mono County · Day 91', note:'Caught the morning ferry across with four other hikers heading into VVR for resupply.', likes:289, comments:14 },
+  { mile: 1755, title:'Fording Bear Creek', meta:'Sierra Nevada · Day 89', note:'High water this week — thigh-deep and moving fast. Linked arms with two others to cross safely.', likes:634, comments:41 },
+  { mile: 1690, title:'Muir Trail Ranch resupply', meta:'Sierra Nevada · Day 86', note:'Picked up my bucket, ate a real meal, and repacked for the next 90 miles with no town access.', likes:198, comments:9 },
+  { mile: 1612, title:'Forester Pass, 13,153 ft', meta:'Sierra Nevada · Day 82', note:'Highest point on the whole trail. Cold, clear, and completely worth the 4am start.', likes:1120, comments:67 },
+  { mile: 1540, title:'Kennedy Meadows South', meta:'Sierra Nevada · Day 78', note:'The unofficial gateway to the Sierra. Traded my desert shoes for boots and picked up my bear can.', likes:356, comments:19 }
+];
+
+const GEAR_ITEMS = [
+  { cat:'Shelter', name:'Duplex Tent', weight:'17.5 oz' },
+  { cat:'Sleep', name:'20°F Quilt', weight:'19 oz' },
+  { cat:'Pack', name:'55L Frameless Pack', weight:'22 oz' },
+  { cat:'Water', name:'Sawyer Squeeze + 2L bags', weight:'4 oz' },
+  { cat:'Cook', name:'Titanium Pot, 750ml', weight:'4.5 oz' },
+  { cat:'Footwear', name:'Trail Runners', weight:'22 oz/pair' }
+];
+
+const logEl = document.getElementById('log');
+LOG_ENTRIES.forEach((e,i)=>{
+  const entry = document.createElement('div');
+  entry.className='entry';
+  entry.innerHTML = `
+    <div class="entry-marker" style="background:linear-gradient(160deg, ${MARKER_TONES[i%MARKER_TONES.length]}, #20262b)">
+      <div class="mm-num">${e.mile}</div>
+      <div class="mm-label">Miles</div>
+    </div>
+    <div class="entry-body">
+      <div class="entry-title">${e.title}</div>
+      <div class="entry-meta">${e.meta}</div>
+      <div class="entry-note">${e.note}</div>
+      <div class="entry-stats"><span>♥ ${e.likes}</span><span>💬 ${e.comments}</span></div>
+    </div>
+  `;
+  logEl.appendChild(entry);
+});
+
+const gearGrid = document.getElementById('gear-grid');
+GEAR_ITEMS.forEach(g=>{
+  const el = document.createElement('div');
+  el.className='gear-item';
+  el.innerHTML = `<div class="gear-cat">${g.cat}</div><div class="gear-name">${g.name}</div><div class="gear-weight">${g.weight}</div>`;
+  gearGrid.appendChild(el);
+});
+
+// ---- Tabs ----
+const tabs = document.querySelectorAll('.tab');
+const gearPanel = document.getElementById('gear-panel');
+const statsPanel = document.getElementById('stats-panel');
+tabs.forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    logEl.classList.toggle('hide', which!=='log');
+    gearPanel.classList.toggle('show', which==='gear');
+    statsPanel.classList.toggle('show', which==='stats');
+  });
+});
+
+// ---- Follow button ----
+const followBtn = document.getElementById('follow-btn');
+const followerStat = document.getElementById('stat-followers');
+let following = false;
+let baseFollowers = 14320;
+followBtn.addEventListener('click', ()=>{
+  following = !following;
+  followBtn.textContent = following ? 'Following' : 'Follow';
+  followBtn.classList.toggle('following', following);
+  followerStat.textContent = (baseFollowers + (following?1:0)).toLocaleString();
+});
+</script>
+</body>
+</html>

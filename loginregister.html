@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login / Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #1C1F26;
+    --field: #20232B;
+    --amber: #E8A94B;
+    --teal: #5FBFA6;
+    --coral: #E1605A;
+    --text: #F2F1EC;
+    --dim: #8A8F98;
+    --rule: #2A2E37;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    min-height: 100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .card{
+    width: 100%;
+    max-width: 400px;
+    background: var(--panel);
+    border-radius: 20px;
+    padding: 34px 30px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+
+  .tabs{
+    display:flex;
+    background: var(--field);
+    border-radius: 100px;
+    padding: 4px;
+    margin-bottom: 26px;
+  }
+  .tabs button{
+    flex:1;
+    background:none; border:none;
+    color: var(--dim);
+    font-family:'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 10px 0;
+    border-radius: 100px;
+    cursor:pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tabs button.active{ background: var(--amber); color: #14161A; }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+  .lede{ color: var(--dim); font-size: 13.5px; margin-bottom: 22px; }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .field{ margin-bottom: 16px; }
+  .field label{
+    display:block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dim);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+  .input-wrap{ position:relative; }
+  .field input{
+    width: 100%;
+    background: var(--field);
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    font-size: 14.5px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .field input:focus{ border-color: var(--amber); }
+  .field.error input{ border-color: var(--coral); }
+  .error-msg{
+    display:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--coral);
+    margin-top: 5px;
+  }
+  .field.error .error-msg{ display:block; }
+
+  .toggle-eye{
+    position:absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background:none; border:none; color: var(--dim);
+    cursor:pointer; font-size: 13px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .toggle-eye:hover{ color: var(--text); }
+
+  .strength-bar{
+    display:flex; gap:4px; margin-top: 8px;
+  }
+  .strength-bar div{
+    height: 3px; flex:1; background: var(--rule); border-radius: 2px;
+    transition: background 0.2s ease;
+  }
+  .strength-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--dim);
+    margin-top: 5px;
+  }
+
+  .remember-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .remember-row label{ display:flex; align-items:center; gap:6px; color: var(--dim); cursor:pointer; }
+  .remember-row a{ color: var(--amber); text-decoration:none; }
+  .remember-row a:hover{ text-decoration:underline; }
+
+  .submit-btn{
+    width:100%;
+    background: var(--amber);
+    color: #14161A;
+    border:none;
+    border-radius: 10px;
+    padding: 13px 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor:pointer;
+    transition: filter 0.15s ease, transform 0.08s ease;
+  }
+  .submit-btn:hover{ filter: brightness(1.08); }
+  .submit-btn:active{ transform: scale(0.98); }
+
+  .switch-line{
+    text-align:center;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--dim);
+  }
+  .switch-line a{ color: var(--amber); cursor:pointer; text-decoration:none; font-weight:600; }
+  .switch-line a:hover{ text-decoration:underline; }
+
+  .success{
+    display:none;
+    text-align:center;
+    padding: 10px 0;
+  }
+  .success.show{ display:block; }
+  .success .check{
+    width: 52px; height:52px; border-radius:50%;
+    background: rgba(95,191,166,0.15); color: var(--teal);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 24px; margin: 0 auto 16px;
+  }
+  .success h2{ font-family:'Fraunces', serif; font-size: 20px; margin-bottom: 8px; }
+  .success p{ color: var(--dim); font-size: 13.5px; margin-bottom: 18px; }
+  .success button{
+    background:none; border: 1px solid var(--rule); color: var(--text);
+    padding: 9px 18px; border-radius: 100px; font-size: 13px; cursor:pointer;
+  }
+  .success button:hover{ border-color: var(--amber); color: var(--amber); }
+
+  .forms-wrap.hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="forms-wrap" id="formsWrap">
+    <div class="tabs">
+      <button class="active" data-tab="loginPanel">Log in</button>
+      <button data-tab="registerPanel">Register</button>
+    </div>
+
+    <!-- ===== LOGIN ===== -->
+    <div class="panel active" id="loginPanel">
+      <h1>Welcome back</h1>
+      <p class="lede">Log in to continue to your account.</p>
+
+      <form id="loginForm" novalidate>
+        <div class="field" id="loginEmailField">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+          <p class="error-msg">Enter a valid email.</p>
+        </div>
+
+        <div class="field" id="loginPassField">
+          <label>Password</label>
+          <div class="input-wrap">
+            <input type="password" id="loginPass" placeholder="Your password">
+            <button type="button" class="toggle-eye" data-target="loginPass">show</button>
+          </div>
+          <p class="error-msg">Password is required.</p>
+        </div>
+
+        <div class="remember-row">
+          <label><input type="checkbox" id="rememberMe"> Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="submit-btn">Log in</button>
+      </form>
+
+      <p class="switch-line">No account? <a data-switch="registerPanel">Register</a></p>
+    </div>
+
+    <!-- ===== REGISTER ===== -->
+    <div class="panel" id="registerPanel">
+      <h1>Create account</h1>
+      <p class="lede">It only takes a minute.</p>
+
+      <form id="registerForm" novalidate>
+        <div class="field" id="regNameField">
+          <label>Full name</label>
+          <input type="text" id="regName" placeholder="Your name">
+          <p class="error-msg">Please enter your name.</p>
+        </div>
+
+        <div class="field" id="regEmailField">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="you@example.com">
+          <p class="error-msg">Enter a valid email.</p>
+        </div>
+
+        <div class="field" id="regPassField">
+          <label>Password</label>
+          <div class="input-wrap">
+            <input type="password" id="regPass" placeholder="Create a password">
+            <button type="button" class="toggle-eye" data-target="regPass">show</button>
+          </div>
+          <div class="strength-bar"><div></div><div></div><div></div><div></div></div>
+          <p class="strength-label" id="strengthLabel">&nbsp;</p>
+          <p class="error-msg">Password must be at least 8 characters.</p>
+        </div>
+
+        <div class="field" id="regConfirmField">
+          <label>Confirm password</label>
+          <div class="input-wrap">
+            <input type="password" id="regConfirm" placeholder="Repeat password">
+            <button type="button" class="toggle-eye" data-target="regConfirm">show</button>
+          </div>
+          <p class="error-msg">Passwords don't match.</p>
+        </div>
+
+        <button type="submit" class="submit-btn">Create account</button>
+      </form>
+
+      <p class="switch-line">Already have an account? <a data-switch="loginPanel">Log in</a></p>
+    </div>
+  </div>
+
+  <div class="success" id="successView">
+    <div class="check">✓</div>
+    <h2 id="successTitle">Signed in</h2>
+    <p id="successText">Redirecting you now…</p>
+    <button id="resetBtn">Back to form</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const formsWrap = document.getElementById('formsWrap');
+  const successView = document.getElementById('successView');
+  const successTitle = document.getElementById('successTitle');
+  const successText = document.getElementById('successText');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // ---- tabs ----
+  function activateTab(panelId){
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === panelId));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === panelId));
+  }
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+  });
+  document.querySelectorAll('[data-switch]').forEach(a => {
+    a.addEventListener('click', () => activateTab(a.dataset.switch));
+  });
+
+  // ---- show/hide password ----
+  document.querySelectorAll('.toggle-eye').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      btn.textContent = isPass ? 'hide' : 'show';
+    });
+  });
+
+  function setError(fieldId, isError){
+    document.getElementById(fieldId).classList.toggle('error', isError);
+  }
+  function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  function showSuccess(title, text){
+    formsWrap.classList.add('hidden');
+    successView.classList.add('show');
+    successTitle.textContent = title;
+    successText.textContent = text;
+  }
+  resetBtn.addEventListener('click', () => {
+    successView.classList.remove('show');
+    formsWrap.classList.remove('hidden');
+    document.getElementById('loginForm').reset();
+    document.getElementById('registerForm').reset();
+    ['loginEmailField','loginPassField','regNameField','regEmailField','regPassField','regConfirmField'].forEach(id => setError(id, false));
+    updateStrength('');
+  });
+
+  // ---- login ----
+  document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    let valid = true;
+
+    if (!isValidEmail(email)){ setError('loginEmailField', true); valid = false; } else setError('loginEmailField', false);
+    if (!pass){ setError('loginPassField', true); valid = false; } else setError('loginPassField', false);
+
+    if (valid) showSuccess('Welcome back', "You're logged in — redirecting you now.");
+  });
+
+  // ---- password strength ----
+  const strengthBars = document.querySelectorAll('.strength-bar div');
+  const strengthLabel = document.getElementById('strengthLabel');
+  const colors = ['#E1605A', '#E8A94B', '#E8D24B', '#5FBFA6'];
+  const labels = ['Weak', 'Okay', 'Good', 'Strong'];
+
+  function scorePassword(pw){
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    return score;
+  }
+
+  function updateStrength(pw){
+    const score = pw ? scorePassword(pw) : 0;
+    strengthBars.forEach((bar, i) => {
+      bar.style.background = i < score ? colors[score-1] : 'var(--rule)';
+    });
+    strengthLabel.textContent = pw ? labels[Math.max(score-1,0)] : '\u00A0';
+  }
+
+  document.getElementById('regPass').addEventListener('input', (e) => updateStrength(e.target.value));
+
+  // ---- register ----
+  document.getElementById('registerForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const pass = document.getElementById('regPass').value;
+    const confirm = document.getElementById('regConfirm').value;
+    let valid = true;
+
+    if (!name){ setError('regNameField', true); valid = false; } else setError('regNameField', false);
+    if (!isValidEmail(email)){ setError('regEmailField', true); valid = false; } else setError('regEmailField', false);
+    if (pass.length < 8){ setError('regPassField', true); valid = false; } else setError('regPassField', false);
+    if (confirm !== pass || !confirm){ setError('regConfirmField', true); valid = false; } else setError('regConfirmField', false);
+
+    if (valid) showSuccess('Account created', 'Welcome, ' + name + ' — you can now log in.');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>@earthware.studio — Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,500;0,700;1,500&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stone:#e9e4da;
+    --stone-dark:#d8d1c2;
+    --ink:#2a2724;
+    --clay:#9c4a2e;
+    --clay-bright:#c46341;
+    --sage:#6b7a5e;
+    --card:#f6f3ec;
+    --line: rgba(42,39,36,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--stone);color:var(--ink);font-family:'Public Sans',sans-serif;}
+  #page{max-width:900px; margin:0 auto; padding:0 20px 80px 20px;}
+
+  /* ---- Cover + header ---- */
+  #cover{
+    height:200px; margin:0 -20px; border-radius:0 0 18px 18px; position:relative; overflow:hidden;
+    background:
+      repeating-linear-gradient(115deg, rgba(42,39,36,0.05) 0px, rgba(42,39,36,0.05) 2px, transparent 2px, transparent 24px),
+      linear-gradient(135deg, #9c4a2e 0%, #6b7a5e 55%, #2a2724 130%);
+  }
+
+  #profile-head{display:flex; align-items:flex-end; gap:22px; margin-top:-58px; padding:0 12px;}
+  #avatar{
+    width:118px; height:118px; border-radius:50%; border:5px solid var(--stone);
+    background:radial-gradient(circle at 35% 30%, #c46341, #7a3a24 70%);
+    box-shadow:0 8px 20px rgba(0,0,0,0.25); flex-shrink:0;
+  }
+  #head-info{padding-bottom:10px; flex:1;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--sage); margin-bottom:4px;
+  }
+  h1{font-family:'Bitter',serif; font-weight:700; font-size:26px; margin:0 0 2px 0;}
+  #handle{font-family:'JetBrains Mono',monospace; font-size:13px; color:rgba(42,39,36,0.55);}
+
+  #actions{display:flex; gap:10px; padding-bottom:10px;}
+  .btn{
+    font-family:'Public Sans',sans-serif; font-weight:600; font-size:13.5px; padding:9px 18px;
+    border-radius:8px; cursor:pointer; border:1.5px solid transparent;
+  }
+  #follow-btn{background:var(--clay); color:var(--card);}
+  #follow-btn:hover{background:var(--clay-bright);}
+  #follow-btn.following{background:transparent; border-color:var(--ink); color:var(--ink);}
+  #msg-btn{background:transparent; border-color:var(--line); color:var(--ink);}
+  #msg-btn:hover{border-color:var(--ink);}
+
+  /* ---- Bio + stats ---- */
+  #bio-row{display:flex; gap:40px; margin:22px 0 6px 0; padding:0 12px; flex-wrap:wrap;}
+  #bio{max-width:440px; font-size:14px; line-height:1.6; color:rgba(42,39,36,0.8);}
+  #bio b{color:var(--clay);}
+
+  #stats{display:flex; gap:28px; margin-left:auto;}
+  .stat{text-align:center;}
+  .stat-num{font-family:'Bitter',serif; font-weight:700; font-size:22px; display:block;}
+  .stat-label{font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; color:rgba(42,39,36,0.5); letter-spacing:0.04em;}
+
+  /* ---- Tabs ---- */
+  #tabs{display:flex; gap:6px; margin:26px 0 18px 0; padding:0 12px; border-bottom:1px solid var(--line);}
+  .tab{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:10px 4px; margin-right:22px; cursor:pointer; color:rgba(42,39,36,0.45);
+    border-bottom:2px solid transparent; position:relative; top:1px;
+  }
+  .tab.active{color:var(--ink); border-bottom-color:var(--clay); font-weight:700;}
+
+  /* ---- Grid ---- */
+  #grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; padding:0 12px;
+  }
+  .post{
+    aspect-ratio:1; border-radius:6px; position:relative; cursor:pointer; overflow:hidden;
+    display:flex; align-items:flex-end; padding:10px;
+  }
+  .post-overlay{
+    position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.45), transparent 55%);
+    opacity:0; transition:opacity .15s ease; display:flex; align-items:flex-end; padding:10px;
+  }
+  .post:hover .post-overlay{opacity:1;}
+  .post-stats{color:#fff; font-family:'JetBrains Mono',monospace; font-size:11.5px; display:flex; gap:12px;}
+
+  #about-panel, #shop-panel{padding:6px 12px 20px 12px; font-size:14px; line-height:1.7; color:rgba(42,39,36,0.8); display:none;}
+  #about-panel.show, #shop-panel.show{display:block;}
+  #grid.hide{display:none;}
+  .about-block{margin-bottom:18px;}
+  .about-label{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--sage); margin-bottom:6px;}
+
+  #shop-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; margin-top:8px;}
+  .shop-item{background:var(--card); border-radius:10px; padding:14px; border:1px solid var(--line);}
+  .shop-swatch{width:100%; aspect-ratio:1; border-radius:8px; margin-bottom:10px;}
+  .shop-name{font-family:'Bitter',serif; font-weight:700; font-size:14.5px;}
+  .shop-price{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--clay); margin-top:2px;}
+
+  @media(max-width:600px){
+    #grid{grid-template-columns:repeat(2,1fr);}
+    #stats{margin-left:0; margin-top:14px;}
+    #bio-row{flex-direction:column; gap:6px;}
+  }
+</style>
+</head>
+<body>
+<div id="page">
+  <div id="cover"></div>
+  <div id="profile-head">
+    <div id="avatar"></div>
+    <div id="head-info">
+      <div class="eyebrow">Ceramic studio · Portland, OR</div>
+      <h1>Earthware Studio</h1>
+      <div id="handle">@earthware.studio</div>
+    </div>
+    <div id="actions">
+      <button id="follow-btn" class="btn">Follow</button>
+      <button id="msg-btn" class="btn">Message</button>
+    </div>
+  </div>
+
+  <div id="bio-row">
+    <div id="bio">Wood-fired stoneware, one kiln load at a time. <b>Wheel-thrown</b> functional pottery — mugs, bowls, carafes — glazed in ash and iron. Firing every six weeks; small batches, no two pieces alike.</div>
+    <div id="stats">
+      <div class="stat"><span class="stat-num" id="stat-posts">142</span><span class="stat-label">Pieces</span></div>
+      <div class="stat"><span class="stat-num" id="stat-followers">8,204</span><span class="stat-label">Followers</span></div>
+      <div class="stat"><span class="stat-num">63</span><span class="stat-label">Firings</span></div>
+    </div>
+  </div>
+
+  <div id="tabs">
+    <div class="tab active" data-tab="posts">Posts</div>
+    <div class="tab" data-tab="shop">Shop</div>
+    <div class="tab" data-tab="about">About</div>
+  </div>
+
+  <div id="grid"></div>
+
+  <div id="shop-panel">
+    <div id="shop-grid"></div>
+  </div>
+
+  <div id="about-panel">
+    <div class="about-block">
+      <div class="about-label">Practice</div>
+      Reduction-fired stoneware in a converted garage studio, thrown on a kick wheel most mornings before the shop opens. Ash glazes are mixed in-house from wood collected off the property.
+    </div>
+    <div class="about-block">
+      <div class="about-label">Next firing</div>
+      Kiln opens the third weekend of next month — new work posted here first, shop restock follows within 48 hours.
+    </div>
+    <div class="about-block">
+      <div class="about-label">Commissions</div>
+      Open for small batch commissions (sets of 4–12). Message with size, glaze preference, and intended use.
+    </div>
+  </div>
+</div>
+
+<script>
+const CLAY_TONES = ['#9c4a2e','#c46341','#6b7a5e','#8c8579','#7a3a24','#4d5c40'];
+
+const POSTS = [
+  { likes: 342, comments: 12 }, { likes: 891, comments: 34 }, { likes: 156, comments: 5 },
+  { likes: 620, comments: 21 }, { likes: 1204, comments: 58 }, { likes: 88, comments: 3 },
+  { likes: 445, comments: 17 }, { likes: 302, comments: 9 }, { likes: 730, comments: 26 },
+  { likes: 210, comments: 8 }, { likes: 967, comments: 41 }, { likes: 178, comments: 6 }
+];
+
+const SHOP_ITEMS = [
+  { name:'Ash-Glazed Mug', price:'$38' },
+  { name:'Iron Speckle Bowl, Small', price:'$44' },
+  { name:'Carafe + Cup Set', price:'$96' },
+  { name:'Wide Rim Plate', price:'$52' },
+  { name:'Tumbler, Set of 4', price:'$120' },
+  { name:'Shino Vase', price:'$68' }
+];
+
+const gridEl = document.getElementById('grid');
+POSTS.forEach((p,i)=>{
+  const post = document.createElement('div');
+  post.className='post';
+  post.style.background = `linear-gradient(135deg, ${CLAY_TONES[i%CLAY_TONES.length]}, ${CLAY_TONES[(i+2)%CLAY_TONES.length]})`;
+  post.innerHTML = `<div class="post-overlay"><div class="post-stats"><span>♥ ${p.likes}</span><span>💬 ${p.comments}</span></div></div>`;
+  gridEl.appendChild(post);
+});
+
+const shopGrid = document.getElementById('shop-grid');
+SHOP_ITEMS.forEach((item,i)=>{
+  const el = document.createElement('div');
+  el.className='shop-item';
+  el.innerHTML = `
+    <div class="shop-swatch" style="background:linear-gradient(135deg, ${CLAY_TONES[i%CLAY_TONES.length]}, ${CLAY_TONES[(i+3)%CLAY_TONES.length]})"></div>
+    <div class="shop-name">${item.name}</div>
+    <div class="shop-price">${item.price}</div>
+  `;
+  shopGrid.appendChild(el);
+});
+
+// ---- Tabs ----
+const tabs = document.querySelectorAll('.tab');
+const shopPanel = document.getElementById('shop-panel');
+const aboutPanel = document.getElementById('about-panel');
+tabs.forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    tabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    gridEl.classList.toggle('hide', which!=='posts');
+    shopPanel.classList.toggle('show', which==='shop');
+    aboutPanel.classList.toggle('show', which==='about');
+  });
+});
+
+// ---- Follow button ----
+const followBtn = document.getElementById('follow-btn');
+const followerStat = document.getElementById('stat-followers');
+let following = false;
+let baseFollowers = 8204;
+followBtn.addEventListener('click', ()=>{
+  following = !following;
+  followBtn.textContent = following ? 'Following' : 'Follow';
+  followBtn.classList.toggle('following', following);
+  followerStat.textContent = (baseFollowers + (following?1:0)).toLocaleString();
+});
+</script>
+</body>
+</html>

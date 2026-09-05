@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Name — Web Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0D1117;
+    --bg-2: #141B24;
+    --bg-3: #1B2430;
+    --line: rgba(230,232,235,0.09);
+    --text: #E6E8EB;
+    --dim: #8B94A0;
+    --amber: #E8A94B;
+    --teal: #5FBFA6;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+  }
+  a{ color:inherit; text-decoration:none; }
+  ::selection{ background: var(--amber); color:#0D1117; }
+
+  .shell{ max-width: 920px; margin:0 auto; padding: 0 24px; }
+
+  /* ---- editor tab bar ---- */
+  .tabbar{
+    position: sticky; top:0; z-index: 50;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .tabbar-inner{
+    max-width: 920px; margin:0 auto; padding: 0 24px;
+    display:flex; align-items:center; gap:2px;
+    overflow-x:auto;
+  }
+  .tab{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--dim);
+    padding: 14px 16px;
+    border-bottom: 2px solid transparent;
+    white-space:nowrap;
+    cursor:pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab:hover{ color: var(--text); }
+  .tab.active{ color: var(--amber); border-bottom-color: var(--amber); }
+  .dot-unsaved{ color: var(--teal); margin-left:4px; }
+
+  /* ---- line-numbered section wrapper ---- */
+  .code-section{
+    display:flex;
+    border-bottom: 1px solid var(--line);
+  }
+  .linenums{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(139,148,160,0.35);
+    text-align:right;
+    padding: 48px 14px 48px 0;
+    user-select:none;
+    flex-shrink:0;
+    width: 48px;
+  }
+  .linenums div{ height: 28px; }
+  .section-content{ flex:1; padding: 48px 0 48px 20px; min-width:0; }
+
+  .file-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform:uppercase;
+    color: var(--dim);
+    margin-bottom: 18px;
+  }
+  .file-label::before{ content:"// "; color: var(--teal); }
+
+  /* ---- hero ---- */
+  .hero-code{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 15px;
+    line-height: 1.9;
+    white-space: pre-wrap;
+  }
+  .kw{ color:#C792EA; }
+  .prop{ color: var(--teal); }
+  .str{ color: var(--amber); }
+  .punc{ color: var(--dim); }
+  .cursor-blink{
+    display:inline-block; width:8px; height:16px;
+    background: var(--amber); margin-left:2px;
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  h1.name{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: clamp(36px, 6vw, 56px);
+    font-weight: 700;
+    margin: 26px 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .role{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 18px;
+    color: var(--amber);
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+  .tagline{ color: var(--dim); max-width: 46ch; margin-bottom: 28px; }
+  .cta-row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .btn{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 12px 20px;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover{ background: var(--amber); color:#0D1117; }
+  .btn.ghost{ border-color: var(--line); color: var(--text); }
+  .btn.ghost:hover{ background: var(--bg-3); color: var(--text); }
+
+  /* ---- about ---- */
+  .about-text{ max-width: 62ch; color: var(--dim); font-size: 15px; }
+  .about-text strong{ color: var(--text); font-weight:600; }
+
+  /* ---- skills ---- */
+  .skill-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+    gap: 10px;
+  }
+  .skill{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+    color: var(--text);
+  }
+  .skill span{ color: var(--teal); }
+
+  /* ---- projects ---- */
+  .project{
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    padding: 22px;
+    margin-bottom: 16px;
+    transition: border-color 0.15s ease;
+  }
+  .project:hover{ border-color: var(--amber); }
+  .project-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    flex-wrap:wrap; gap:8px;
+    margin-bottom: 8px;
+  }
+  .project-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size: 19px;
+    font-weight: 600;
+  }
+  .project-tags{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+  }
+  .project-desc{ color: var(--dim); font-size: 14px; margin-bottom: 12px; }
+  .project-links a{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    margin-right: 16px;
+  }
+  .project-links a:hover{ text-decoration: underline; }
+
+  /* ---- contact ---- */
+  .contact-links{ display:flex; flex-direction:column; gap: 12px; }
+  .contact-links a{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+    display:flex; justify-content:space-between;
+  }
+  .contact-links a span{ color: var(--dim); font-size: 13px; }
+  .contact-links a:hover{ color: var(--amber); border-color: var(--amber); }
+
+  footer{
+    text-align:center;
+    padding: 30px 0;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  @media (max-width: 640px){
+    .linenums{ display:none; }
+    .section-content{ padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="tabbar">
+  <div class="tabbar-inner">
+    <a class="tab active" href="#hero">index.html</a>
+    <a class="tab" href="#about">about.js</a>
+    <a class="tab" href="#skills">skills.json</a>
+    <a class="tab" href="#projects">projects.tsx</a>
+    <a class="tab" href="#contact">contact.sh<span class="dot-unsaved">●</span></a>
+  </div>
+</nav>
+
+<div class="shell">
+
+  <section id="hero" class="code-section">
+    <div class="linenums"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div></div>
+    <div class="section-content">
+      <p class="hero-code"><span class="kw">const</span> <span class="prop">developer</span> <span class="punc">=</span> <span class="punc">{</span>
+  <span class="prop">name</span><span class="punc">:</span> <span class="str">"Ashraf khatoon"</span><span class="punc">,</span>
+  <span class="prop">role</span><span class="punc">:</span> <span class="str">"Web Developer"</span><span class="punc">,</span>
+  <span class="prop">stack</span><span class="punc">:</span> <span class="str">"React · Node · CSS"</span>
+<span class="punc">}</span><span class="cursor-blink"></span></p>
+
+      <h1 class="name">Ashraf khatoon</h1>
+      <p class="role">Full-Stack Web Developer</p>
+      <p class="tagline">I build fast, accessible interfaces and the APIs behind them — from first commit to production deploy.</p>
+      <div class="cta-row">
+        <a class="btn" href="#projects">View projects</a>
+        <a class="btn ghost" href="#contact">Get in touch</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="code-section">
+    <div class="linenums"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div></div>
+    <div class="section-content">
+      <p class="file-label">about</p>
+      <p class="about-text">
+        I'm a web developer who likes solving real problems more than chasing frameworks.
+        <strong>3+ years</strong> building products end to end — component libraries, REST/GraphQL APIs,
+        and the CI pipelines that ship them. I care about clean code, honest error states,
+        and pages that stay fast on a slow connection.
+      </p>
+    </div>
+  </section>
+
+  <section id="skills" class="code-section">
+    <div class="linenums"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div></div>
+    <div class="section-content">
+      <p class="file-label">skills</p>
+      <div class="skill-grid">
+        <div class="skill"><span>&gt;</span> HTML / CSS</div>
+        <div class="skill"><span>&gt;</span> JavaScript (ES6+)</div>
+        <div class="skill"><span>&gt;</span> React</div>
+        <div class="skill"><span>&gt;</span> Node.js</div>
+        <div class="skill"><span>&gt;</span> Express</div>
+        <div class="skill"><span>&gt;</span> MongoDB / SQL</div>
+        <div class="skill"><span>&gt;</span> Git / GitHub</div>
+        <div class="skill"><span>&gt;</span> REST APIs</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects" class="code-section">
+    <div class="linenums"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div><div>11</div><div>12</div></div>
+    <div class="section-content">
+      <p class="file-label">projects</p>
+
+      <div class="project">
+        <div class="project-head">
+          <span class="project-title">Weather Logbook</span>
+          <span class="project-tags">HTML · CSS · JS · Open-Meteo API</span>
+        </div>
+        <p class="project-desc">A weather app with a live sky canvas that shifts with real conditions and time of day, plus a 7-day forecast log.</p>
+        <div class="project-links">
+          <a href="#">Live demo →</a>
+          <a href="#">Source code →</a>
+        </div>
+      </div>
+
+      <div class="project">
+        <div class="project-head">
+          <span class="project-title">Task Tracker</span>
+          <span class="project-tags">React · localStorage</span>
+        </div>
+        <p class="project-desc">A drag-to-reorder to-do app with due dates, priority tags, and persistent local storage.</p>
+        <div class="project-links">
+          <a href="#">Live demo →</a>
+          <a href="#">Source code →</a>
+        </div>
+      </div>
+
+      <div class="project">
+        <div class="project-head">
+          <span class="project-title">Expense Dashboard</span>
+          <span class="project-tags">Node · Express · Chart.js</span>
+        </div>
+        <p class="project-desc">A full-stack expense tracker with category breakdowns and monthly spend charts.</p>
+        <div class="project-links">
+          <a href="#">Live demo →</a>
+          <a href="#">Source code →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="code-section">
+    <div class="linenums"><div>1</div><div>2</div><div>3</div><div>4</div></div>
+    <div class="section-content">
+      <p class="file-label">contact — run to connect</p>
+      <div class="contact-links">
+        <a href="mailto:you@example.com">you@example.com <span>email</span></a>
+        <a href="https://github.com/yourusername" target="_blank" rel="noopener">github.com/yourusername <span>code</span></a>
+        <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener">linkedin.com/in/yourusername <span>network</span></a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>built with HTML · CSS · JS — © <span id="year"></span> Your Name</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // active tab highlight on scroll
+  const tabs = document.querySelectorAll('.tab');
+  const sections = [...tabs].map(t => document.querySelector(t.getAttribute('href')));
+
+  function onScroll(){
+    let idx = 0;
+    const y = window.scrollY + 120;
+    sections.forEach((s, i) => { if (s && s.offsetTop <= y) idx = i; });
+    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+  }
+  window.addEventListener('scroll', onScroll);
+  onScroll();
+</script>
+</body>
+</html>
